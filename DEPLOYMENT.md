@@ -83,7 +83,7 @@ docker build -t bright-ideas-frontend .
 ### 2. Deploy with Docker Compose
 ```bash
 # Set environment variables
-cp .env.example .env
+cp .env .env
 # Edit .env with your values
 
 # Start services
