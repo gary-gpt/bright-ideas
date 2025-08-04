@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en" class="h-full">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+		<meta name="description" content="AI-powered brainstorming and planning tool" />
+		<meta name="theme-color" content="#0ea5e9" />
+		
+		<!-- Preconnect to fonts -->
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+		
+		<!-- PWA Meta Tags -->
+		<meta name="application-name" content="Bright Ideas" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+		<meta name="apple-mobile-web-app-title" content="Bright Ideas" />
+		<meta name="format-detection" content="telephone=no" />
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="msapplication-TileColor" content="#0ea5e9" />
+		<meta name="msapplication-tap-highlight" content="no" />
+		
+		%sveltekit.head%
+	</head>
+	<body 
+		data-sveltekit-preload-data="hover" 
+		class="h-full bg-secondary-50 text-secondary-900 antialiased"
+	>
+		<div style="display: contents" class="h-full">%sveltekit.body%</div>
+		
+		<!-- Loading indicator for better UX -->
+		<div id="loading" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 hidden">
+			<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+		</div>
+	</body>
+</html>
