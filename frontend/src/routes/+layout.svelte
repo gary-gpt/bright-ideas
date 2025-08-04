@@ -4,10 +4,10 @@
    */
   import '../app.postcss';
   import { onMount } from 'svelte';
-  import { toasts, toastActions, globalLoading } from '$stores/ui';
-  import Navigation from '$components/shared/Navigation.svelte';
-  import Toast from '$components/shared/Toast.svelte';
-  import LoadingSpinner from '$components/shared/LoadingSpinner.svelte';
+  import { toasts, toastActions, globalLoading } from '$lib/stores/ui';
+  import Navigation from '$lib/components/shared/Navigation.svelte';
+  import Toast from '$lib/components/shared/Toast.svelte';
+  import LoadingSpinner from '$lib/components/shared/LoadingSpinner.svelte';
 
   onMount(() => {
     // Initialize any global setup here

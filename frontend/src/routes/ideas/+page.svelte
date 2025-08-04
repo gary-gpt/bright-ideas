@@ -4,11 +4,11 @@
    */
   import { onMount } from 'svelte';
   import { Search, Filter, Plus, Grid, List } from 'lucide-svelte';
-  import { ideaActions, filteredIdeas, allTags, searchFilters } from '$stores/ideas';
-  import { toastActions } from '$stores/ui';
-  import Button from '$components/shared/Button.svelte';
-  import LoadingSpinner from '$components/shared/LoadingSpinner.svelte';
-  import type { Idea } from '$types';
+  import { ideaActions, filteredIdeas, allTags, searchFilters } from '$lib/stores/ideas';
+  import { toastActions } from '$lib/stores/ui';
+  import Button from '$lib/components/shared/Button.svelte';
+  import LoadingSpinner from '$lib/components/shared/LoadingSpinner.svelte';
+  import type { Idea } from '$lib/types';
 
   let loading = true;
   let viewMode: 'grid' | 'list' = 'grid';

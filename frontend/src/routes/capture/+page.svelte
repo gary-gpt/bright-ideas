@@ -3,10 +3,10 @@
    * Idea capture page - initial form
    */
   import { goto } from '$app/navigation';
-  import { ideaActions } from '$stores/ideas';
-  import { toastActions } from '$stores/ui';
-  import IdeaCapture from '$components/capture/IdeaCapture.svelte';
-  import type { IdeaCaptureForm } from '$types';
+  import { ideaActions } from '$lib/stores/ideas';
+  import { toastActions } from '$lib/stores/ui';
+  import IdeaCapture from '$lib/components/capture/IdeaCapture.svelte';
+  import type { IdeaCaptureForm } from '$lib/types';
 
   let loading = false;
 
