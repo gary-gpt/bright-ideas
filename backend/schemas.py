@@ -23,7 +23,8 @@ class IdeaUpdate(BaseModel):
     target_audience: Optional[str] = None
     implementation_notes: Optional[Dict[str, Any]] = None
     tags: Optional[List[str]] = None
-    status: Optional[str] = Field(None, regex="^(captured|refined|building|completed)$")
+    # ✅ New (Pydantic v2)
+    status: Optional[str] = Field(default=None, pattern="^(captured|refined|building|completed)$")
 
 
 class IdeaResponse(BaseModel):
