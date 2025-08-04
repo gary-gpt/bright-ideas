@@ -49,13 +49,13 @@ class IdeaResponse(BaseModel):
 class MessageCreate(BaseModel):
     """Schema for creating a new message in a conversation."""
     content: str = Field(..., min_length=1)
-    role: str = Field(..., regex="^(user|assistant)$")
+    role: str = Field(..., pattern="^(user|assistant)$")
 
 
 class ConversationCreate(BaseModel):
     """Schema for creating a new conversation."""
     idea_id: UUID
-    mode: str = Field(..., regex="^(capture|build)$")
+    mode: str = Field(..., pattern="^(capture|build)$")
     initial_message: Optional[str] = None
 
 
@@ -122,7 +122,7 @@ class ExportResponse(BaseModel):
 # Chat/AI Schemas
 class ChatMessage(BaseModel):
     """Schema for chat messages."""
-    role: str = Field(..., regex="^(user|assistant|system)$")
+    role: str = Field(..., pattern="^(user|assistant|system)$")
     content: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
