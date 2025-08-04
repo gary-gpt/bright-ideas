@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: bright-ideas-frontend
+    env: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.17.0
+      - key: VITE_API_BASE_URL
+        value: https://your-backend-url.onrender.com
