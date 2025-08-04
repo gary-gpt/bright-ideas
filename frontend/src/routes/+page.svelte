@@ -4,7 +4,7 @@
    */
   import { onMount } from 'svelte';
   import { Plus, TrendingUp, BookOpen, Clock } from 'lucide-svelte';
-  import { ideaActions, ideas } from '$lib/stores/ideas';
+  import { ideaActions, ideas } from '$lib/stores/ideas.ts';
   import { toastActions } from '$lib/stores/ui';
   import Button from '$lib/components/shared/Button.svelte';
   import LoadingSpinner from '$lib/components/shared/LoadingSpinner.svelte';

@@ -4,7 +4,7 @@
    */
   import { onMount } from 'svelte';
   import { Search, Filter, Plus, Grid, List } from 'lucide-svelte';
-  import { ideaActions, filteredIdeas, allTags, searchFilters } from '$lib/stores/ideas';
+  import { ideaActions, filteredIdeas, allTags, searchFilters } from '$lib/stores/ideas.ts';
   import { toastActions } from '$lib/stores/ui';
   import Button from '$lib/components/shared/Button.svelte';
   import LoadingSpinner from '$lib/components/shared/LoadingSpinner.svelte';
