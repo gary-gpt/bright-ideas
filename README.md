@@ -1,3 +1,11 @@
+For Backend:
+On Render: srv-d28hu8v5r7bs73f2o51g
+https://bright-ideas-backend.onrender.com
+
+
+
+
+
 # 🚀 Bright Ideas
 
 **AI-powered brainstorming and planning tool** that helps transform vague concepts into actionable plans.
