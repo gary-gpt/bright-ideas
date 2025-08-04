@@ -73,3 +73,6 @@ htmlcov/
 
 # Deployment
 .render/
+# SvelteKit build output
+.svelte-kit/
+build/
