@@ -34,9 +34,13 @@ async def lifespan(app: FastAPI):
             logger.error("❌ Database connection failed, cannot proceed with migrations")
             raise Exception("Database connection unavailable")
         
-        # Run JSON schema fix for PostgreSQL compatibility
-        from fix_json_schema import main as fix_json_schema
-        fix_json_schema()
+        # Run targeted tags column fix for PostgreSQL compatibility
+        from fix_tags_column import fix_tags_column
+        if not fix_tags_column():
+            logger.warning("Tags column fix failed, but continuing with startup...")
+        
+        # Also ensure all tables exist
+        create_tables()
         
         logger.info("✅ Database tables created/fixed successfully")
         logger.info("Tables include: ideas, refinement_sessions, plans")

@@ -54,9 +54,10 @@ def reset_database():
 def check_database_connection():
     """Check if database connection is working."""
     try:
+        from sqlalchemy import text
         db = SessionLocal()
         # Simple query to test connection
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         db.close()
         return True
     except Exception as e:

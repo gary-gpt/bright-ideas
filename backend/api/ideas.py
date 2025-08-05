@@ -54,10 +54,13 @@ def create_idea(
         logger.info(f"Final processed tags - type: {type(tags)}, value: {tags}, count: {len(tags)}")
         
         # Create new idea with explicit JSON-compatible data
+        # Ensure tags is stored as proper Python list, not JSON string
+        logger.info(f"Creating idea with tags as: {tags} (Python list)")
+        
         db_idea = Idea(
             title=idea.title.strip(),
             original_description=idea.original_description.strip(),
-            tags=tags,  # Now guaranteed to be a proper list
+            tags=tags,  # Pass as Python list - SQLAlchemy will handle JSON conversion
             status=IdeaStatus.captured
         )
         
