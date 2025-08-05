@@ -172,7 +172,7 @@ class ApiClient {
   }
 
   async getRecentIdeas(limit = 5): Promise<Idea[]> {
-    return this.request<Idea[]>(`/ideas/recent/?limit=${limit}`);
+    return this.request<Idea[]>(`/ideas/recent?limit=${limit}`);
   }
 
   async getIdeaSummary(ideaId: string): Promise<IdeaSummary> {
