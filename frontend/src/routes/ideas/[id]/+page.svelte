@@ -16,23 +16,44 @@
   $: ideaId = $page.params.id;
 
   onMount(async () => {
+    console.log('Detail page onMount started, ideaId:', ideaId);
+    
     if (ideaId) {
       try {
-        // Load idea details and plans in parallel
-        const [loadedIdea, loadedPlans] = await Promise.all([
-          ideaActions.loadIdea(ideaId),
-          planActions.loadIdeaPlans(ideaId).catch(() => []) // Don't fail if plans can't load
-        ]);
+        console.log('Loading idea details...');
         
+        // Load idea details first
+        const loadedIdea = await ideaActions.loadIdea(ideaId);
+        console.log('Idea loaded successfully:', loadedIdea);
         idea = loadedIdea;
-        ideaPlans = loadedPlans;
+        
+        // Then load plans separately with better error handling
+        try {
+          console.log('Loading idea plans...');
+          const loadedPlans = await planActions.loadIdeaPlans(ideaId);
+          console.log('Plans loaded successfully:', loadedPlans);
+          ideaPlans = loadedPlans;
+        } catch (planError) {
+          console.warn('Failed to load plans, using empty array:', planError);
+          ideaPlans = [];
+        }
+        
       } catch (error) {
-        console.error('Failed to load idea:', error);
-        toastActions.error('Failed to load idea');
+        console.error('Failed to load idea details:', error);
+        console.error('Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          error: error
+        });
+        toastActions.error(`Failed to load idea: ${error instanceof Error ? error.message : 'Unknown error'}`);
         goto('/ideas');
       } finally {
+        console.log('Detail page loading complete');
         loading = false;
       }
+    } else {
+      console.error('No ideaId provided');
+      loading = false;
     }
   });
 
@@ -193,7 +214,7 @@
           </div>
 
           <!-- Tags -->
-          {#if idea.tags.length > 0}
+          {#if idea.tags && idea.tags.length > 0}
             <div class="flex flex-wrap gap-2 mb-4">
               {#each idea.tags as tag}
                 <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-secondary-100 text-secondary-700">
@@ -249,24 +270,24 @@
         </div>
 
         <!-- Active Plan Summary -->
-        {#if activePlan}
+        {#if activePlan && activePlan.steps && activePlan.resources}
           <div class="bg-green-50 rounded-lg border border-green-200">
             <div class="p-6">
               <div class="flex items-center justify-between mb-3">
                 <h2 class="text-lg font-semibold text-green-900">Active Implementation Plan</h2>
                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  {activePlan.status}
+                  {activePlan.status || 'Unknown'}
                 </span>
               </div>
               <div class="prose prose-sm max-w-none text-green-800 mb-4">
-                <p>{activePlan.summary}</p>
+                <p>{activePlan.summary || 'No summary available'}</p>
               </div>
               <div class="flex items-center space-x-3 text-sm text-green-700">
-                <span>{activePlan.steps.length} steps</span>
+                <span>{(activePlan.steps || []).length} steps</span>
                 <span>•</span>
-                <span>{activePlan.resources.length} resources</span>
+                <span>{(activePlan.resources || []).length} resources</span>
                 <span>•</span>
-                <span>Created {formatDate(activePlan.created_at)}</span>
+                <span>Created {activePlan.created_at ? formatDate(activePlan.created_at) : 'Unknown'}</span>
               </div>
               <div class="mt-4 flex space-x-2">
                 <Button size="sm" href="/ideas/{idea.id}/plans/{activePlan.id}">
@@ -281,7 +302,7 @@
         {/if}
 
         <!-- Latest Refinement Session -->
-        {#if idea.latest_session}
+        {#if idea.latest_session && idea.latest_session.questions && idea.latest_session.answers}
           <div class="bg-white rounded-lg shadow-sm border border-secondary-200">
             <div class="p-6">
               <div class="flex items-center justify-between mb-3">
@@ -291,12 +312,12 @@
                 </span>
               </div>
               <div class="text-sm text-secondary-600 mb-3">
-                {Object.keys(idea.latest_session.answers).length} of {idea.latest_session.questions.length} questions answered
+                {Object.keys(idea.latest_session.answers || {}).length} of {(idea.latest_session.questions || []).length} questions answered
               </div>
               <div class="w-full bg-secondary-200 rounded-full h-2 mb-4">
                 <div 
                   class="bg-primary-600 h-2 rounded-full transition-all duration-300" 
-                  style="width: {Math.round((Object.keys(idea.latest_session.answers).length / idea.latest_session.questions.length) * 100)}%"
+                  style="width: {Math.round((Object.keys(idea.latest_session.answers || {}).length / Math.max((idea.latest_session.questions || []).length, 1)) * 100)}%"
                 ></div>
               </div>
               <div class="flex space-x-2">
