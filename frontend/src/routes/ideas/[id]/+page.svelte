@@ -2,7 +2,7 @@
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { ideaActions, planActions } from '$lib/stores';
+  import { ideaActions, planActions, currentIdea } from '$lib/stores';
   import { toastActions } from '$lib/stores';
   import Button from '$lib/components/shared/Button.svelte';
   import LoadingSpinner from '$lib/components/shared/LoadingSpinner.svelte';
@@ -85,8 +85,7 @@
         await ideaActions.updateIdea(idea.id, { status: 'archived' });
         toastActions.success('Idea archived successfully');
         // Refresh the idea data
-        await ideaActions.loadIdea(ideaId);
-        idea = $currentIdea;
+        idea = await ideaActions.loadIdea(ideaId);
       } catch (error) {
         console.error('Failed to archive idea:', error);
         toastActions.error('Failed to archive idea');

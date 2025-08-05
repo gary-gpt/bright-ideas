@@ -218,10 +218,21 @@ def get_idea(
     if not idea:
         raise HTTPException(status_code=404, detail="Idea not found")
     
-    # Build detailed response
-    sessions_count = len(idea.refinement_sessions)
-    plans_count = len(idea.plans)
-    has_active_plan = idea.active_plan is not None
+    # Build detailed response with safe relationship access
+    try:
+        sessions_count = len(idea.refinement_sessions) if idea.refinement_sessions else 0
+        plans_count = len(idea.plans) if idea.plans else 0
+        has_active_plan = idea.active_plan is not None
+        latest_session = idea.latest_session
+        active_plan = idea.active_plan
+    except Exception as e:
+        # If relationships fail to load (tables don't exist yet), use defaults
+        logger.warning(f"Relationship loading failed for idea {idea.id}: {e}")
+        sessions_count = 0
+        plans_count = 0
+        has_active_plan = False
+        latest_session = None
+        active_plan = None
     
     response = IdeaDetailResponse(
         id=idea.id,
@@ -234,8 +245,8 @@ def get_idea(
         refinement_sessions_count=sessions_count,
         plans_count=plans_count,
         has_active_plan=has_active_plan,
-        latest_session=idea.latest_session,
-        active_plan=idea.active_plan
+        latest_session=latest_session,
+        active_plan=active_plan
     )
     
     return response

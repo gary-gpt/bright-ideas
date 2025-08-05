@@ -22,6 +22,26 @@ from services.ai_service import AIService
 router = APIRouter(prefix="/plans", tags=["plans"])
 ai_service = AIService()
 
+@router.get("/ideas/{idea_id}", response_model=List[PlanResponse])
+def get_idea_plans(
+    idea_id: UUID,
+    db: Session = Depends(get_db)
+):
+    """
+    Get all plans for a specific idea
+    """
+    # Verify idea exists
+    idea = db.query(Idea).filter(Idea.id == idea_id).first()
+    if not idea:
+        raise HTTPException(status_code=404, detail="Idea not found")
+    
+    # Get plans for this idea, ordered by creation date (newest first)
+    plans = db.query(Plan).filter(
+        Plan.idea_id == idea_id
+    ).order_by(Plan.created_at.desc()).all()
+    
+    return plans
+
 @router.post("/generate/", response_model=PlanResponse)
 async def generate_plan(
     request: Dict[str, Any],
