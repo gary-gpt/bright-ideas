@@ -3,7 +3,7 @@ API routes for refinement sessions - AI-generated questions and answers
 """
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Dict, Any
 from uuid import UUID
 
 from database import get_db
@@ -159,12 +159,22 @@ def complete_refinement_session(
 
 @router.post("/questions/generate/", response_model=QuestionGenerationResponse)
 async def generate_questions(
-    idea_id: UUID,
+    request: Dict[str, Any],
     db: Session = Depends(get_db)
 ):
     """
     Generate new questions for an idea (standalone endpoint for testing)
     """
+    # Extract idea_id from request body
+    idea_id = request.get("idea_id")
+    if not idea_id:
+        raise HTTPException(status_code=400, detail="idea_id is required")
+    
+    try:
+        idea_id = UUID(idea_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid idea_id format")
+    
     idea = db.query(Idea).filter(Idea.id == idea_id).first()
     if not idea:
         raise HTTPException(status_code=404, detail="Idea not found")

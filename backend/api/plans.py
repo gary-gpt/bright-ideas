@@ -24,12 +24,22 @@ ai_service = AIService()
 
 @router.post("/generate/", response_model=PlanResponse)
 async def generate_plan(
-    refinement_session_id: UUID,
+    request: Dict[str, Any],
     db: Session = Depends(get_db)
 ):
     """
     Generate an implementation plan from a completed refinement session
     """
+    # Extract refinement_session_id from request body
+    refinement_session_id = request.get("refinement_session_id")
+    if not refinement_session_id:
+        raise HTTPException(status_code=400, detail="refinement_session_id is required")
+    
+    try:
+        refinement_session_id = UUID(refinement_session_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid refinement_session_id format")
+    
     # Get the refinement session
     session = db.query(RefinementSession).filter(
         RefinementSession.id == refinement_session_id
@@ -298,13 +308,24 @@ def export_plan_markdown(
 
 @router.post("/test-generation/", response_model=PlanGenerationResponse)
 async def test_plan_generation(
-    idea_id: UUID,
-    answers: Dict[str, str],
+    request: Dict[str, Any],
     db: Session = Depends(get_db)
 ):
     """
     Test plan generation without creating a plan (for development/testing)
     """
+    # Extract parameters from request body
+    idea_id = request.get("idea_id")
+    answers = request.get("answers", {})
+    
+    if not idea_id:
+        raise HTTPException(status_code=400, detail="idea_id is required")
+    
+    try:
+        idea_id = UUID(idea_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid idea_id format")
+    
     idea = db.query(Idea).filter(Idea.id == idea_id).first()
     if not idea:
         raise HTTPException(status_code=404, detail="Idea not found")

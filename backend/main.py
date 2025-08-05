@@ -28,6 +28,12 @@ async def lifespan(app: FastAPI):
     try:
         logger.info("Attempting to create/fix database tables...")
         
+        # First check database connection
+        from database import check_database_connection
+        if not check_database_connection():
+            logger.error("❌ Database connection failed, cannot proceed with migrations")
+            raise Exception("Database connection unavailable")
+        
         # Run JSON schema fix for PostgreSQL compatibility
         from fix_json_schema import main as fix_json_schema
         fix_json_schema()
@@ -35,6 +41,18 @@ async def lifespan(app: FastAPI):
         logger.info("✅ Database tables created/fixed successfully")
         logger.info("Tables include: ideas, refinement_sessions, plans")
         logger.info("JSON schema fix applied for PostgreSQL compatibility")
+    except SystemExit:
+        # Handle sys.exit(1) from migration script more gracefully
+        logger.error("❌ Migration script failed, attempting safe fallback...")
+        try:
+            logger.info("Attempting fallback table creation...")
+            create_tables()
+            logger.info("✅ Fallback table creation successful")
+            logger.info("⚠️  Note: Migration failed but app started with existing/new schema")
+        except Exception as fallback_error:
+            logger.error(f"❌ Fallback also failed: {fallback_error}")
+            logger.error("💥 Cannot start app without database tables")
+            raise
     except Exception as e:
         logger.error(f"❌ Failed to create/fix database tables: {e}")
         logger.error(f"Database URL configured: {bool(os.environ.get('DATABASE_URL'))}")
@@ -43,8 +61,10 @@ async def lifespan(app: FastAPI):
             logger.info("Attempting fallback table creation...")
             create_tables()
             logger.info("✅ Fallback table creation successful")
+            logger.info("⚠️  Note: JSON schema fix failed but app started with existing schema")
         except Exception as fallback_error:
             logger.error(f"❌ Fallback also failed: {fallback_error}")
+            logger.error("💥 Cannot start app without database tables")
             raise
     
     yield

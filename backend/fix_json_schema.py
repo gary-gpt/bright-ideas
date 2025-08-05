@@ -32,11 +32,56 @@ def backup_existing_ideas():
     finally:
         db.close()
 
+def clean_orphaned_tables():
+    """Remove orphaned tables from old architecture that block table recreation"""
+    db = SessionLocal()
+    try:
+        inspector = inspect(engine)
+        existing_tables = inspector.get_table_names()
+        
+        # Define orphaned tables from old architecture
+        orphaned_tables = ['conversations', 'build_plans', 'exports']
+        
+        for table in orphaned_tables:
+            if table in existing_tables:
+                logger.info(f"Dropping orphaned table: {table}")
+                db.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
+        
+        db.commit()
+        logger.info("✅ Orphaned tables cleaned up")
+        return True
+    except Exception as e:
+        logger.error(f"❌ Failed to clean orphaned tables: {e}")
+        db.rollback()
+        return False
+    finally:
+        db.close()
+
 def drop_and_recreate_tables():
     """Drop and recreate all tables with proper schema"""
     try:
-        logger.info("Dropping existing tables...")
-        Base.metadata.drop_all(bind=engine)
+        # First clean up orphaned tables that might block recreation
+        logger.info("Cleaning up orphaned tables from old architecture...")
+        if not clean_orphaned_tables():
+            logger.error("Failed to clean orphaned tables, attempting CASCADE drop...")
+        
+        logger.info("Dropping existing tables with CASCADE...")
+        # Use raw SQL with CASCADE to handle any remaining constraints
+        db = SessionLocal()
+        try:
+            # Drop tables that we know exist in our current model
+            tables_to_drop = ['plans', 'refinement_sessions', 'ideas']
+            for table in tables_to_drop:
+                db.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
+            db.commit()
+            logger.info("✅ Tables dropped with CASCADE")
+        except Exception as e:
+            logger.error(f"Manual table drop failed: {e}")
+            db.rollback()
+            # Fall back to metadata drop
+            Base.metadata.drop_all(bind=engine)
+        finally:
+            db.close()
         
         logger.info("Creating tables with proper JSON schema...")
         Base.metadata.create_all(bind=engine)
@@ -89,7 +134,7 @@ def main():
     logger.info("Step 2: Recreating tables with proper JSON schema...")
     if not drop_and_recreate_tables():
         logger.error("❌ Migration failed at table recreation")
-        sys.exit(1)
+        raise Exception("Migration failed at table recreation - check database permissions and constraints")
     
     # Step 3: Restore data
     logger.info("Step 3: Restoring ideas with proper JSON formatting...")
