@@ -310,15 +310,38 @@ def delete_idea(
     """
     Delete an idea and all related data (cascading)
     """
+    logger.info(f"Attempting to delete idea: {idea_id}")
+    
     idea = db.query(Idea).filter(Idea.id == idea_id).first()
     
     if not idea:
+        logger.warning(f"Idea not found for deletion: {idea_id}")
         raise HTTPException(status_code=404, detail="Idea not found")
     
-    db.delete(idea)  # Cascading deletes will handle related records
-    db.commit()
-    
-    return {"message": "Idea deleted successfully"}
+    try:
+        # Log what we're about to delete
+        logger.info(f"Deleting idea: {idea.title} (ID: {idea.id})")
+        
+        # Try to get relationship counts before deletion for logging
+        try:
+            sessions_count = len(idea.refinement_sessions) if hasattr(idea, 'refinement_sessions') and idea.refinement_sessions else 0
+            plans_count = len(idea.plans) if hasattr(idea, 'plans') and idea.plans else 0
+            logger.info(f"Idea has {sessions_count} sessions and {plans_count} plans")
+        except Exception as rel_error:
+            logger.warning(f"Could not count relationships: {rel_error}")
+        
+        # Perform the deletion
+        db.delete(idea)  # Cascading deletes will handle related records
+        db.commit()
+        
+        logger.info(f"✅ Successfully deleted idea: {idea_id}")
+        return {"message": "Idea deleted successfully"}
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to delete idea {idea_id}: {e}")
+        logger.error(f"Error type: {type(e).__name__}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete idea: {str(e)}")
 
 @router.get("/{idea_id}/summary")
 def get_idea_summary(

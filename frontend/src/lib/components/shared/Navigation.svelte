@@ -4,13 +4,14 @@
    */
   import { page } from '$app/stores';
   import { sidebarOpen, isMobile, navigationActions } from '$lib/stores/ui';
-  import { Lightbulb, Home, BookOpen, Settings, Menu, X } from 'lucide-svelte';
+  import { Lightbulb, Home, BookOpen, Settings, Menu, X, Archive } from 'lucide-svelte';
   import Button from './Button.svelte';
 
   const navItems = [
     { href: '/', icon: Home, label: 'Dashboard' },
     { href: '/capture', icon: Lightbulb, label: 'Capture' },
     { href: '/ideas', icon: BookOpen, label: 'Ideas' },
+    { href: '/ideas/archive', icon: Archive, label: 'Archive' },
     { href: '/settings', icon: Settings, label: 'Settings' }
   ];
 

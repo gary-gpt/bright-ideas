@@ -195,6 +195,7 @@ export interface SearchFilters {
   status?: string;
   sortBy?: 'created_at' | 'updated_at' | 'title';
   sortOrder?: 'asc' | 'desc';
+  includeArchived?: boolean;
 }
 
 // ====================================

@@ -67,6 +67,11 @@ export const filteredIdeas = derived(
     // Apply status filter
     if ($filters.status) {
       filtered = filtered.filter(idea => idea.status === $filters.status);
+    } else {
+      // By default, exclude archived ideas unless explicitly showing them
+      if (!$filters.includeArchived) {
+        filtered = filtered.filter(idea => idea.status !== 'archived');
+      }
     }
 
     // Apply tags filter
@@ -279,6 +284,10 @@ export const ideaActions = {
 
   updateSorting(sortBy: 'created_at' | 'updated_at' | 'title', sortOrder: 'asc' | 'desc') {
     searchFilters.update(filters => ({ ...filters, sortBy, sortOrder }));
+  },
+
+  updateFilters(updates: Partial<SearchFilters>) {
+    searchFilters.update(filters => ({ ...filters, ...updates }));
   },
 
   clearFilters() {

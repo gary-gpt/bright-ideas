@@ -99,6 +99,17 @@
         />
       </div>
 
+      <!-- Archive Toggle -->
+      <label class="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          class="rounded border-secondary-300 text-primary-600 focus:ring-primary-500"
+          bind:checked={$searchFilters.includeArchived}
+          on:change={(e) => ideaActions.updateFilters({ includeArchived: e.currentTarget.checked })}
+        />
+        <span class="text-sm text-secondary-700">Include Archived</span>
+      </label>
+
       <!-- View Toggle -->
       <div class="flex items-center bg-secondary-100 rounded-lg p-1">
         <button
