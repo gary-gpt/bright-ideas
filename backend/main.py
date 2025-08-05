@@ -87,7 +87,7 @@ async def internal_error_handler(request, exc):
     )
 
 
-# Health check endpoint
+# Health check endpoints (both with and without API prefix)
 @app.get("/health")
 async def health_check():
     """API health check endpoint."""
@@ -104,6 +104,11 @@ async def health_check():
             "plan_export"
         ]
     }
+
+@app.get(f"{settings.api_prefix}/health")
+async def health_check_api():
+    """API health check endpoint with prefix."""
+    return await health_check()
 
 
 # Root endpoint

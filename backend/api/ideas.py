@@ -108,12 +108,22 @@ def get_ideas(
     # Apply pagination
     ideas = query.offset(skip).limit(limit).all()
     
-    # Build response with computed fields
+    # Build response with computed fields (optimized queries)
     response_ideas = []
     for idea in ideas:
-        sessions_count = len(idea.refinement_sessions)
-        plans_count = len(idea.plans)
-        has_active_plan = idea.active_plan is not None
+        # Get counts with separate efficient queries
+        sessions_count = db.query(func.count(RefinementSession.id)).filter(
+            RefinementSession.idea_id == idea.id
+        ).scalar() or 0
+        
+        plans_count = db.query(func.count(Plan.id)).filter(
+            Plan.idea_id == idea.id
+        ).scalar() or 0
+        
+        has_active_plan = db.query(Plan).filter(
+            Plan.idea_id == idea.id,
+            Plan.is_active == True
+        ).first() is not None
         
         response_ideas.append(IdeaResponse(
             id=idea.id,
@@ -165,17 +175,31 @@ def get_recent_ideas(
     db: Session = Depends(get_db)
 ):
     """
-    Get recently updated ideas
+    Get recently updated ideas with optimized queries
     """
+    from sqlalchemy.orm import joinedload
+    from sqlalchemy import func
+    
+    # Get ideas with basic info
     ideas = db.query(Idea).order_by(
         Idea.updated_at.desc()
     ).limit(limit).all()
     
     response_ideas = []
     for idea in ideas:
-        sessions_count = len(idea.refinement_sessions)
-        plans_count = len(idea.plans)
-        has_active_plan = idea.active_plan is not None
+        # Get counts with separate efficient queries
+        sessions_count = db.query(func.count(RefinementSession.id)).filter(
+            RefinementSession.idea_id == idea.id
+        ).scalar() or 0
+        
+        plans_count = db.query(func.count(Plan.id)).filter(
+            Plan.idea_id == idea.id
+        ).scalar() or 0
+        
+        has_active_plan = db.query(Plan).filter(
+            Plan.idea_id == idea.id,
+            Plan.is_active == True
+        ).first() is not None
         
         response_ideas.append(IdeaResponse(
             id=idea.id,
