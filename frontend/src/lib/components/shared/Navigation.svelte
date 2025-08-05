@@ -64,7 +64,7 @@
   </div>
 
   <!-- Navigation items -->
-  <div class="flex flex-col space-y-1 p-4 pb-20">
+  <div class="flex flex-col space-y-1 p-4">
     {#each navItems as item}
       <a
         href={item.href}
@@ -79,16 +79,16 @@
       </a>
     {/each}
   </div>
-
-  <!-- Footer -->
-  <div class="absolute bottom-4 left-4 right-4">
-    <div class="rounded-lg bg-secondary-50 p-3">
-      <p class="text-xs text-secondary-600">
-        AI-powered brainstorming and planning
-      </p>
-    </div>
-  </div>
 </nav>
+
+<!-- AI-powered footer box positioned in lower left of main viewport -->
+<div class="fixed bottom-4 left-4 z-10 lg:left-72">
+  <div class="rounded-lg bg-secondary-50 p-3 shadow-sm border border-secondary-200">
+    <p class="text-xs text-secondary-600">
+      AI-powered brainstorming and planning
+    </p>
+  </div>
+</div>
 
 <!-- Main content area adjustment -->
 <div class="lg:ml-64">
