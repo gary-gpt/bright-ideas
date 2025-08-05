@@ -119,17 +119,29 @@
   async function deleteIdea() {
     if (!idea) return;
     
+    console.log('Delete function called for idea:', idea.id, idea.title);
+    
     if (confirm(`Delete "${idea.title}"? This action cannot be undone.`)) {
+      console.log('User confirmed deletion, proceeding...');
       loading = true;
       try {
+        console.log('Calling ideaActions.deleteIdea with ID:', idea.id);
         await ideaActions.deleteIdea(idea.id);
+        console.log('Delete API call completed successfully');
         toastActions.success('Idea deleted successfully');
         goto('/ideas');
       } catch (error) {
         console.error('Failed to delete idea:', error);
-        toastActions.error('Failed to delete idea');
+        console.error('Delete error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          error: error
+        });
+        toastActions.error(`Failed to delete idea: ${error instanceof Error ? error.message : 'Unknown error'}`);
         loading = false;
       }
+    } else {
+      console.log('User cancelled deletion');
     }
   }
 

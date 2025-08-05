@@ -222,18 +222,36 @@ export const ideaActions = {
   },
 
   async deleteIdea(ideaId: string): Promise<void> {
+    console.log('ideaActions.deleteIdea called with:', ideaId);
     try {
+      console.log('Making API call to delete idea...');
       await api.deleteIdea(ideaId);
+      console.log('API delete call successful, updating local state...');
       
       // Remove from ideas list
-      ideas.update(items => items.filter(item => item.id !== ideaId));
+      ideas.update(items => {
+        const filteredItems = items.filter(item => item.id !== ideaId);
+        console.log(`Removed idea from local store. Before: ${items.length}, After: ${filteredItems.length}`);
+        return filteredItems;
+      });
       
       // Clear current idea if it matches
-      currentIdea.update(current => 
-        current?.id === ideaId ? null : current
-      );
+      currentIdea.update(current => {
+        if (current?.id === ideaId) {
+          console.log('Clearing current idea as it was deleted');
+          return null;
+        }
+        return current;
+      });
+      
+      console.log('Delete operation completed successfully');
     } catch (error) {
-      console.error('Failed to delete idea:', error);
+      console.error('Failed to delete idea in store:', error);
+      console.error('API delete error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        name: error instanceof Error ? error.name : 'Unknown',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       throw error;
     }
   },
