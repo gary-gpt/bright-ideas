@@ -92,7 +92,8 @@ async def health_check():
     return {
         "status": "healthy",
         "version": "1.0.0",
-        "environment": settings.environment
+        "environment": settings.environment,
+        "cors_origins": settings.cors_origins  # Debug info
     }
 
 

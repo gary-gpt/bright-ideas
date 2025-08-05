@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o"
     
     # Application settings
-    environment: str = "development"
+    environment: str = "development"  
     debug: bool = True
     cors_origins: List[str] = [
         "http://localhost:5173",
@@ -31,6 +31,13 @@ class Settings(BaseSettings):
         cors_env = os.getenv('CORS_ORIGINS')
         if cors_env:
             self.cors_origins = [origin.strip() for origin in cors_env.split(',')]
+        
+        # Force production CORS origins in production environment
+        if os.getenv('ENVIRONMENT') == 'production':
+            self.cors_origins = [
+                "http://localhost:5173",
+                "https://bright-ideas.onrender.com"
+            ]
     
     # API settings
     api_prefix: str = "/api/v1"
