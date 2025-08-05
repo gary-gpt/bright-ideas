@@ -118,7 +118,7 @@ class ApiClient {
     }
 
     const query = searchParams.toString();
-    return this.request<Idea[]>(`/ideas/${query ? `?${query}` : ''}`);
+    return this.request<Idea[]>(`/ideas${query ? `?${query}` : ''}`);
   }
 
   async getIdea(ideaId: string): Promise<Idea> {
@@ -139,11 +139,11 @@ class ApiClient {
   }
 
   async getIdeaStats(): Promise<IdeaStats> {
-    return this.request<IdeaStats>('/ideas/stats/');
+    return this.request<IdeaStats>('/ideas/stats');
   }
 
   async getRecentIdeas(limit = 5): Promise<Idea[]> {
-    return this.request<Idea[]>(`/ideas/recent/?limit=${limit}`);
+    return this.request<Idea[]>(`/ideas/recent?limit=${limit}`);
   }
 
   // Conversation API methods
