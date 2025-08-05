@@ -24,16 +24,28 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting Bright Ideas API (New Architecture v2.1)...")
     
-    # Create database tables
+    # Create database tables with JSON schema fix
     try:
-        logger.info("Attempting to create database tables...")
-        create_tables()
-        logger.info("✅ Database tables created successfully")
-        logger.info("Tables should include: ideas, refinement_sessions, plans")
+        logger.info("Attempting to create/fix database tables...")
+        
+        # Run JSON schema fix for PostgreSQL compatibility
+        from fix_json_schema import main as fix_json_schema
+        fix_json_schema()
+        
+        logger.info("✅ Database tables created/fixed successfully")
+        logger.info("Tables include: ideas, refinement_sessions, plans")
+        logger.info("JSON schema fix applied for PostgreSQL compatibility")
     except Exception as e:
-        logger.error(f"❌ Failed to create database tables: {e}")
+        logger.error(f"❌ Failed to create/fix database tables: {e}")
         logger.error(f"Database URL configured: {bool(os.environ.get('DATABASE_URL'))}")
-        raise
+        # Fallback to regular table creation
+        try:
+            logger.info("Attempting fallback table creation...")
+            create_tables()
+            logger.info("✅ Fallback table creation successful")
+        except Exception as fallback_error:
+            logger.error(f"❌ Fallback also failed: {fallback_error}")
+            raise
     
     yield
     

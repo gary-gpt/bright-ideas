@@ -34,26 +34,30 @@ def create_idea(
     logger.info(f"Tags - type: {type(idea.tags)}, value: {idea.tags}, repr: {repr(idea.tags)}")
     
     try:
-        # Ensure tags is a proper list (fix serialization issue)
-        if isinstance(idea.tags, str):
-            # If tags came as string, try to parse it
-            try:
-                import json
-                tags = json.loads(idea.tags) if idea.tags.strip() else []
-            except (json.JSONDecodeError, AttributeError):
+        # Ensure tags is a proper list with explicit type guarantees
+        tags = []
+        if idea.tags:
+            if isinstance(idea.tags, str):
+                # Handle string input (should not happen with new schema, but safety first)
+                try:
+                    import json
+                    parsed = json.loads(idea.tags)
+                    tags = parsed if isinstance(parsed, list) else []
+                except (json.JSONDecodeError, TypeError, AttributeError):
+                    tags = []
+            elif isinstance(idea.tags, list):
+                # Ensure all items are strings
+                tags = [str(tag).strip() for tag in idea.tags if tag and str(tag).strip()]
+            else:
                 tags = []
-        elif isinstance(idea.tags, list):
-            tags = idea.tags
-        else:
-            tags = []
         
-        logger.info(f"Processed tags - type: {type(tags)}, value: {tags}")
+        logger.info(f"Final processed tags - type: {type(tags)}, value: {tags}, count: {len(tags)}")
         
-        # Create new idea using new model
+        # Create new idea with explicit JSON-compatible data
         db_idea = Idea(
-            title=idea.title,
-            original_description=idea.original_description,
-            tags=tags,
+            title=idea.title.strip(),
+            original_description=idea.original_description.strip(),
+            tags=tags,  # Now guaranteed to be a proper list
             status=IdeaStatus.captured
         )
         

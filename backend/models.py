@@ -1,8 +1,8 @@
 """
 Updated SQLAlchemy models for Bright Ideas - Structured Refinement System
 """
-from sqlalchemy import Column, String, Text, DateTime, Boolean, JSON, ForeignKey, Enum
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, String, Text, DateTime, Boolean, ForeignKey, Enum
+from sqlalchemy.dialects.postgresql import UUID, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -31,7 +31,7 @@ class Idea(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     title = Column(String(200), nullable=False)
     original_description = Column(Text, nullable=False)
-    tags = Column(JSON, default=lambda: [])  # ["productivity", "ai", "tool"]
+    tags = Column(JSON, nullable=False, default=list)  # ["productivity", "ai", "tool"]
     status = Column(Enum(IdeaStatus), default=IdeaStatus.captured)
     
     # Timestamps
