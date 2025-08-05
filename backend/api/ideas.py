@@ -108,23 +108,10 @@ def get_ideas(
     # Apply pagination
     ideas = query.offset(skip).limit(limit).all()
     
-    # Build response with computed fields (optimized queries)
+    # Build response with computed fields (simplified for initial deployment)
     response_ideas = []
     for idea in ideas:
-        # Get counts with separate efficient queries
-        sessions_count = db.query(func.count(RefinementSession.id)).filter(
-            RefinementSession.idea_id == idea.id
-        ).scalar() or 0
-        
-        plans_count = db.query(func.count(Plan.id)).filter(
-            Plan.idea_id == idea.id
-        ).scalar() or 0
-        
-        has_active_plan = db.query(Plan).filter(
-            Plan.idea_id == idea.id,
-            Plan.is_active == True
-        ).first() is not None
-        
+        # For now, return zero counts until the new tables are properly set up
         response_ideas.append(IdeaResponse(
             id=idea.id,
             title=idea.title,
@@ -133,9 +120,9 @@ def get_ideas(
             status=idea.status.value,
             created_at=idea.created_at,
             updated_at=idea.updated_at,
-            refinement_sessions_count=sessions_count,
-            plans_count=plans_count,
-            has_active_plan=has_active_plan
+            refinement_sessions_count=0,
+            plans_count=0,
+            has_active_plan=False
         ))
     
     return response_ideas
@@ -143,7 +130,7 @@ def get_ideas(
 @router.get("/stats")
 def get_idea_stats(db: Session = Depends(get_db)):
     """
-    Get statistics about ideas in the new architecture
+    Get statistics about ideas (simplified for initial deployment)
     """
     total_ideas = db.query(Idea).count()
     
@@ -153,20 +140,14 @@ def get_idea_stats(db: Session = Depends(get_db)):
         count = db.query(Idea).filter(Idea.status == status).count()
         status_counts[status.value] = count
     
-    # Other stats
-    ideas_with_plans = db.query(Idea).join(Plan).distinct().count()
-    total_sessions = db.query(RefinementSession).count()
-    completed_sessions = db.query(RefinementSession).filter(
-        RefinementSession.is_complete == True
-    ).count()
-    
+    # Simplified stats until all tables are set up
     return {
         "total_ideas": total_ideas,
         "status_counts": status_counts,
-        "ideas_with_plans": ideas_with_plans,
-        "total_refinement_sessions": total_sessions,
-        "completed_refinement_sessions": completed_sessions,
-        "average_sessions_per_idea": round(total_sessions / max(total_ideas, 1), 2)
+        "ideas_with_plans": 0,
+        "total_refinement_sessions": 0,
+        "completed_refinement_sessions": 0,
+        "average_sessions_per_idea": 0.0
     }
 
 @router.get("/recent", response_model=List[IdeaResponse])
@@ -175,11 +156,8 @@ def get_recent_ideas(
     db: Session = Depends(get_db)
 ):
     """
-    Get recently updated ideas with optimized queries
+    Get recently updated ideas with simplified response
     """
-    from sqlalchemy.orm import joinedload
-    from sqlalchemy import func
-    
     # Get ideas with basic info
     ideas = db.query(Idea).order_by(
         Idea.updated_at.desc()
@@ -187,20 +165,8 @@ def get_recent_ideas(
     
     response_ideas = []
     for idea in ideas:
-        # Get counts with separate efficient queries
-        sessions_count = db.query(func.count(RefinementSession.id)).filter(
-            RefinementSession.idea_id == idea.id
-        ).scalar() or 0
-        
-        plans_count = db.query(func.count(Plan.id)).filter(
-            Plan.idea_id == idea.id
-        ).scalar() or 0
-        
-        has_active_plan = db.query(Plan).filter(
-            Plan.idea_id == idea.id,
-            Plan.is_active == True
-        ).first() is not None
-        
+        # For now, return zero counts until the new tables are properly set up
+        # This prevents database query errors during the transition
         response_ideas.append(IdeaResponse(
             id=idea.id,
             title=idea.title,
@@ -209,9 +175,9 @@ def get_recent_ideas(
             status=idea.status.value,
             created_at=idea.created_at,
             updated_at=idea.updated_at,
-            refinement_sessions_count=sessions_count,
-            plans_count=plans_count,
-            has_active_plan=has_active_plan
+            refinement_sessions_count=0,
+            plans_count=0,
+            has_active_plan=False
         ))
     
     return response_ideas
