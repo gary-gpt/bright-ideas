@@ -19,7 +19,10 @@ class Settings(BaseSettings):
     # Application settings
     environment: str = "development"
     debug: bool = True
-    cors_origins: List[str] = ["http://localhost:5173"]
+    cors_origins: List[str] = [
+        "http://localhost:5173",
+        "https://bright-ideas.onrender.com"
+    ]
     
     # API settings
     api_prefix: str = "/api/v1"

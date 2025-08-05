@@ -27,9 +27,20 @@ def create_idea(
     Returns:
         Created idea
     """
-    service = IdeaService(db)
-    db_idea = service.create_idea(idea)
-    return db_idea
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"Creating new idea: {idea.title}")
+    logger.debug(f"Idea data: {idea.model_dump()}")
+    
+    try:
+        service = IdeaService(db)
+        db_idea = service.create_idea(idea)
+        logger.info(f"Successfully created idea with ID: {db_idea.id}")
+        return db_idea
+    except Exception as e:
+        logger.error(f"Failed to create idea: {e}")
+        raise
 
 
 @router.get("/", response_model=List[IdeaResponse])

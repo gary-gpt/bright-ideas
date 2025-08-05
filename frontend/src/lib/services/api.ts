@@ -45,12 +45,18 @@ class ApiClient {
     };
 
     try {
+      console.log(`API Request: ${config.method || 'GET'} ${url}`);
       const response = await fetch(url, config);
       
       if (!response.ok) {
         const error: ApiError = await response.json().catch(() => ({
           detail: `HTTP ${response.status}: ${response.statusText}`
         }));
+        console.error(`API Error: ${config.method || 'GET'} ${url}`, {
+          status: response.status,
+          statusText: response.statusText,
+          error: error.detail
+        });
         throw new Error(error.detail);
       }
 
@@ -63,15 +69,17 @@ class ApiClient {
       }
     } catch (error) {
       if (error instanceof Error) {
+        console.error(`Network Error: ${config.method || 'GET'} ${url}`, error);
         throw error;
       }
+      console.error(`Unknown Error: ${config.method || 'GET'} ${url}`, error);
       throw new Error('Network error occurred');
     }
   }
 
   // Idea API methods
   async createIdea(idea: IdeaCreate): Promise<Idea> {
-    return this.request<Idea>('/ideas', {
+    return this.request<Idea>('/ideas/', {
       method: 'POST',
       body: JSON.stringify(idea),
     });
@@ -125,7 +133,7 @@ class ApiClient {
 
   // Conversation API methods
   async createConversation(conversation: ConversationCreate): Promise<Conversation> {
-    return this.request<Conversation>('/conversations', {
+    return this.request<Conversation>('/conversations/', {
       method: 'POST',
       body: JSON.stringify(conversation),
     });
@@ -178,7 +186,7 @@ class ApiClient {
 
   // Build Planning API methods
   async createBuildPlan(plan: BuildPlanCreate): Promise<BuildPlan> {
-    return this.request<BuildPlan>('/planning', {
+    return this.request<BuildPlan>('/planning/', {
       method: 'POST',
       body: JSON.stringify(plan),
     });
@@ -222,7 +230,7 @@ class ApiClient {
 
   // Export API methods
   async createExport(exportData: ExportCreate): Promise<Export> {
-    return this.request<Export>('/planning/exports', {
+    return this.request<Export>('/planning/exports/', {
       method: 'POST',
       body: JSON.stringify(exportData),
     });
