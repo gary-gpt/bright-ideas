@@ -24,11 +24,19 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://bright-ideas-
 const API_PREFIX = '/api/v1';
 
 // Debug logging for API configuration
-console.log('API Configuration:', {
+console.log('API Configuration (v2):', {
   API_BASE_URL,
   API_PREFIX,
-  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL
+  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+  env_mode: import.meta.env.MODE,
+  env_prod: import.meta.env.PROD
 });
+
+// Additional validation
+if (API_BASE_URL.includes('your-backend-url')) {
+  console.error('❌ CRITICAL: API_BASE_URL is using placeholder value!', API_BASE_URL);
+  throw new Error('API configuration error: Invalid backend URL');
+}
 
 class ApiClient {
   private baseUrl: string;
