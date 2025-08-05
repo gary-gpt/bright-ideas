@@ -14,8 +14,11 @@
   let loading = true;
   let stats = {
     total_ideas: 0,
-    status_distribution: { captured: 0, refining: 0, planned: 0, archived: 0 },
-    popular_tags: []
+    status_counts: { captured: 0, refining: 0, planned: 0, archived: 0 },
+    ideas_with_plans: 0,
+    total_refinement_sessions: 0,
+    completed_refinement_sessions: 0,
+    average_sessions_per_idea: 0
   };
 
   onMount(async () => {
@@ -136,7 +139,7 @@
           </div>
           <div class="ml-3">
             <p class="text-sm font-medium text-secondary-600">Refining</p>
-            <p class="text-2xl font-bold text-secondary-900">{stats.status_distribution.refining}</p>
+            <p class="text-2xl font-bold text-secondary-900">{stats.status_counts.refining}</p>
           </div>
         </div>
       </div>
@@ -148,7 +151,7 @@
           </div>
           <div class="ml-3">
             <p class="text-sm font-medium text-secondary-600">Planned</p>
-            <p class="text-2xl font-bold text-secondary-900">{stats.status_distribution.planned}</p>
+            <p class="text-2xl font-bold text-secondary-900">{stats.status_counts.planned}</p>
           </div>
         </div>
       </div>
@@ -160,7 +163,7 @@
           </div>
           <div class="ml-3">
             <p class="text-sm font-medium text-secondary-600">Archived</p>
-            <p class="text-2xl font-bold text-secondary-900">{stats.status_distribution.archived}</p>
+            <p class="text-2xl font-bold text-secondary-900">{stats.status_counts.archived}</p>
           </div>
         </div>
       </div>
