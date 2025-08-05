@@ -64,7 +64,7 @@
   </div>
 
   <!-- Navigation items -->
-  <div class="flex flex-col space-y-1 p-4">
+  <div class="flex flex-col space-y-1 p-4 pb-20">
     {#each navItems as item}
       <a
         href={item.href}
