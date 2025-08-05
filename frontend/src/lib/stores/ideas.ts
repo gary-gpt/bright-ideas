@@ -72,7 +72,7 @@ export const filteredIdeas = derived(
     // Apply tags filter
     if ($filters.tags && $filters.tags.length > 0) {
       filtered = filtered.filter(idea => 
-        $filters.tags!.every(tag => idea.tags.includes(tag))
+        $filters.tags?.every(tag => idea.tags.includes(tag)) ?? false
       );
     }
 
@@ -84,8 +84,11 @@ export const filteredIdeas = derived(
       if (field === 'title') {
         return order * a.title.localeCompare(b.title);
       } else {
-        const aDate = new Date(a[field as keyof Idea] as string);
-        const bDate = new Date(b[field as keyof Idea] as string);
+        // Safe type-checked date field access
+        const aValue = field === 'created_at' ? a.created_at : a.updated_at;
+        const bValue = field === 'created_at' ? b.created_at : b.updated_at;
+        const aDate = new Date(aValue);
+        const bDate = new Date(bValue);
         return order * (aDate.getTime() - bDate.getTime());
       }
     });
@@ -149,7 +152,7 @@ export const activePlan = derived(
 // ====================================
 
 export const ideaActions = {
-  async loadIdeas(filters?: SearchFilters) {
+  async loadIdeas(filters?: SearchFilters): Promise<void> {
     ideasLoading.set(true);
     try {
       const loadedIdeas = await api.getIdeas({
@@ -167,7 +170,7 @@ export const ideaActions = {
     }
   },
 
-  async loadIdea(ideaId: string) {
+  async loadIdea(ideaId: string): Promise<IdeaDetail> {
     ideaLoading.set(true);
     try {
       const idea = await api.getIdea(ideaId);
@@ -181,7 +184,7 @@ export const ideaActions = {
     }
   },
 
-  async createIdea(ideaData: { title: string; original_description: string; tags: string[] }) {
+  async createIdea(ideaData: { title: string; original_description: string; tags: string[] }): Promise<Idea> {
     try {
       const newIdea = await api.createIdea(ideaData);
       ideas.update(items => [newIdea, ...items]);
@@ -192,7 +195,7 @@ export const ideaActions = {
     }
   },
 
-  async updateIdea(ideaId: string, updates: Partial<Idea>) {
+  async updateIdea(ideaId: string, updates: Partial<Idea>): Promise<Idea> {
     try {
       const updatedIdea = await api.updateIdea(ideaId, updates);
       
@@ -213,7 +216,7 @@ export const ideaActions = {
     }
   },
 
-  async deleteIdea(ideaId: string) {
+  async deleteIdea(ideaId: string): Promise<void> {
     try {
       await api.deleteIdea(ideaId);
       
@@ -230,7 +233,7 @@ export const ideaActions = {
     }
   },
 
-  async loadStats() {
+  async loadStats(): Promise<IdeaStats> {
     try {
       const stats = await api.getIdeaStats();
       ideaStats.set(stats);
@@ -241,7 +244,7 @@ export const ideaActions = {
     }
   },
 
-  async loadRecentIdeas(limit = 5) {
+  async loadRecentIdeas(limit = 5): Promise<Idea[]> {
     try {
       const recent = await api.getRecentIdeas(limit);
       return recent;
@@ -251,7 +254,7 @@ export const ideaActions = {
     }
   },
 
-  async getIdeaSummary(ideaId: string) {
+  async getIdeaSummary(ideaId: string): Promise<IdeaSummary> {
     try {
       const summary = await api.getIdeaSummary(ideaId);
       return summary;
@@ -294,7 +297,7 @@ export const ideaActions = {
 // ====================================
 
 export const refinementActions = {
-  async createSession(ideaId: string) {
+  async createSession(ideaId: string): Promise<RefinementSession> {
     refinementLoading.set(true);
     try {
       const session = await api.createRefinementSession({ idea_id: ideaId });
@@ -308,7 +311,7 @@ export const refinementActions = {
     }
   },
 
-  async loadSession(sessionId: string) {
+  async loadSession(sessionId: string): Promise<RefinementSession> {
     refinementLoading.set(true);
     try {
       const session = await api.getRefinementSession(sessionId);
@@ -322,7 +325,7 @@ export const refinementActions = {
     }
   },
 
-  async loadIdeaSessions(ideaId: string) {
+  async loadIdeaSessions(ideaId: string): Promise<RefinementSession[]> {
     try {
       const sessions = await api.getIdeaRefinementSessions(ideaId);
       refinementSessions.set(sessions);
@@ -333,7 +336,7 @@ export const refinementActions = {
     }
   },
 
-  async submitAnswers(sessionId: string, answers: Record<string, string>) {
+  async submitAnswers(sessionId: string, answers: Record<string, string>): Promise<RefinementSession> {
     try {
       const updatedSession = await api.submitRefinementAnswers(sessionId, { answers });
       currentRefinementSession.set(updatedSession);
@@ -342,7 +345,7 @@ export const refinementActions = {
       if (updatedSession.is_complete) {
         const currentIdeaValue = get(currentIdea);
         if (currentIdeaValue) {
-          ideaActions.loadIdea(currentIdeaValue.id); // Refresh idea data
+          await ideaActions.loadIdea(currentIdeaValue.id); // Refresh idea data
         }
       }
       
@@ -353,7 +356,7 @@ export const refinementActions = {
     }
   },
 
-  async completeSession(sessionId: string) {
+  async completeSession(sessionId: string): Promise<RefinementSession> {
     try {
       const completedSession = await api.completeRefinementSession(sessionId);
       currentRefinementSession.set(completedSession);
@@ -370,17 +373,17 @@ export const refinementActions = {
 // ====================================
 
 export const planActions = {
-  async generatePlan(refinementSessionId: string) {
+  async generatePlan(refinementSessionId: string): Promise<Plan> {
     planLoading.set(true);
     try {
       const plan = await api.generatePlan(refinementSessionId);
       currentPlan.set(plan);
       
       // Refresh idea plans
-      const currentIdeaValue = currentIdea.get();
+      const currentIdeaValue = get(currentIdea);
       if (currentIdeaValue) {
-        planActions.loadIdeaPlans(currentIdeaValue.id);
-        ideaActions.loadIdea(currentIdeaValue.id); // Refresh idea data
+        await planActions.loadIdeaPlans(currentIdeaValue.id);
+        await ideaActions.loadIdea(currentIdeaValue.id); // Refresh idea data
       }
       
       return plan;
@@ -392,7 +395,7 @@ export const planActions = {
     }
   },
 
-  async loadPlan(planId: string) {
+  async loadPlan(planId: string): Promise<Plan> {
     planLoading.set(true);
     try {
       const plan = await api.getPlan(planId);
@@ -406,7 +409,7 @@ export const planActions = {
     }
   },
 
-  async loadIdeaPlans(ideaId: string) {
+  async loadIdeaPlans(ideaId: string): Promise<Plan[]> {
     try {
       const plans = await api.getIdeaPlans(ideaId);
       ideaPlans.set(plans);
@@ -417,7 +420,7 @@ export const planActions = {
     }
   },
 
-  async updatePlan(planId: string, updates: Partial<Plan>) {
+  async updatePlan(planId: string, updates: Partial<Plan>): Promise<Plan> {
     try {
       const updatedPlan = await api.updatePlan(planId, updates);
       currentPlan.update(current => 
@@ -436,7 +439,7 @@ export const planActions = {
     }
   },
 
-  async activatePlan(planId: string) {
+  async activatePlan(planId: string): Promise<Plan> {
     try {
       const activatedPlan = await api.activatePlan(planId);
       
@@ -458,7 +461,7 @@ export const planActions = {
     }
   },
 
-  async deletePlan(planId: string) {
+  async deletePlan(planId: string): Promise<void> {
     try {
       await api.deletePlan(planId);
       
@@ -475,7 +478,7 @@ export const planActions = {
     }
   },
 
-  async exportPlanJson(planId: string, filename?: string) {
+  async exportPlanJson(planId: string, filename?: string): Promise<void> {
     try {
       await api.downloadPlanJson(planId, filename);
     } catch (error) {
@@ -484,7 +487,7 @@ export const planActions = {
     }
   },
 
-  async exportPlanMarkdown(planId: string, filename?: string) {
+  async exportPlanMarkdown(planId: string, filename?: string): Promise<void> {
     try {
       await api.downloadPlanMarkdown(planId, filename);
     } catch (error) {
