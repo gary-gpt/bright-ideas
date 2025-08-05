@@ -22,16 +22,6 @@
 
 <div class="min-h-screen bg-secondary-50">
   <Navigation>
-    <!-- Header Banner - in main content area -->
-    <div class="w-full">
-      <img 
-        src="/header-banner.jpeg" 
-        alt="Bright Ideas" 
-        class="w-full h-24 md:h-32 lg:h-40 object-cover object-center shadow-sm"
-        onerror="console.error('Failed to load header banner image'); this.style.display='none';"
-      />
-    </div>
-    
     <main class="flex-1">
       <slot />
     </main>
