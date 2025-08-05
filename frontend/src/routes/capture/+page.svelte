@@ -30,8 +30,8 @@
       console.log('Idea created successfully:', newIdea);
       toastActions.success('Idea captured successfully!');
       
-      // Navigate to ideas library to see the new idea
-      goto('/ideas');
+      // Navigate to refinement page to continue with AI assistance
+      goto(`/ideas/${newIdea.id}/refine`);
     } catch (error) {
       console.error('Failed to create idea - detailed error:', {
         error: error,
