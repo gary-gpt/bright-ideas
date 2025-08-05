@@ -20,8 +20,15 @@ import type {
 } from '$lib/types';
 
 // Configuration - with fallback for build environments
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://your-backend-url.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://bright-ideas-backend.onrender.com';
 const API_PREFIX = '/api/v1';
+
+// Debug logging for API configuration
+console.log('API Configuration:', {
+  API_BASE_URL,
+  API_PREFIX,
+  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL
+});
 
 class ApiClient {
   private baseUrl: string;

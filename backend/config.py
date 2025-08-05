@@ -24,6 +24,14 @@ class Settings(BaseSettings):
         "https://bright-ideas.onrender.com"
     ]
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Override CORS origins from environment variable if provided
+        import os
+        cors_env = os.getenv('CORS_ORIGINS')
+        if cors_env:
+            self.cors_origins = [origin.strip() for origin in cors_env.split(',')]
+    
     # API settings
     api_prefix: str = "/api/v1"
     

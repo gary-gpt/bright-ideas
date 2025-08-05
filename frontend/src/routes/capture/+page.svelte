@@ -15,19 +15,30 @@
     loading = true;
 
     try {
+      console.log('Submitting idea:', {
+        title: form.title,
+        original_description: form.description,
+        tags: form.tags
+      });
+      
       const newIdea = await ideaActions.createIdea({
         title: form.title,
         original_description: form.description,
         tags: form.tags
       });
 
+      console.log('Idea created successfully:', newIdea);
       toastActions.success('Idea captured successfully!');
       
       // Navigate to refinement page
       goto(`/capture/refine/${newIdea.id}`);
     } catch (error) {
-      console.error('Failed to create idea:', error);
-      toastActions.error('Failed to capture idea. Please try again.');
+      console.error('Failed to create idea - detailed error:', {
+        error: error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      toastActions.error(`Failed to capture idea: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       loading = false;
     }
