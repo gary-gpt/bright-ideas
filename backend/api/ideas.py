@@ -34,8 +34,20 @@ def create_idea(
     logger.info(f"Tags - type: {type(idea.tags)}, value: {idea.tags}, repr: {repr(idea.tags)}")
     
     try:
-        # Ensure tags is a proper list
-        tags = idea.tags if isinstance(idea.tags, list) else []
+        # Ensure tags is a proper list (fix serialization issue)
+        if isinstance(idea.tags, str):
+            # If tags came as string, try to parse it
+            try:
+                import json
+                tags = json.loads(idea.tags) if idea.tags.strip() else []
+            except (json.JSONDecodeError, AttributeError):
+                tags = []
+        elif isinstance(idea.tags, list):
+            tags = idea.tags
+        else:
+            tags = []
+        
+        logger.info(f"Processed tags - type: {type(tags)}, value: {tags}")
         
         # Create new idea using new model
         db_idea = Idea(

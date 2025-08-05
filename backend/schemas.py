@@ -4,7 +4,7 @@ Updated Pydantic schemas for Bright Ideas - Structured Refinement System
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from uuid import UUID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 # Idea Schemas
 class IdeaCreate(BaseModel):
@@ -12,6 +12,24 @@ class IdeaCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     original_description: str = Field(..., min_length=10)
     tags: List[str] = Field(default_factory=list)
+    
+    @field_validator('tags', mode='before')
+    @classmethod
+    def validate_tags(cls, v):
+        """Ensure tags is always a list, even if sent as string"""
+        if isinstance(v, str):
+            if v.strip() == '' or v.strip() == '[]':
+                return []
+            try:
+                import json
+                parsed = json.loads(v)
+                return parsed if isinstance(parsed, list) else []
+            except (json.JSONDecodeError, TypeError):
+                return []
+        elif isinstance(v, list):
+            return v
+        else:
+            return []
 
 class IdeaUpdate(BaseModel):
     """Schema for updating an existing idea"""
