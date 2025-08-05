@@ -30,8 +30,8 @@ def create_idea(
     logger = logging.getLogger(__name__)
     
     logger.info(f"Creating new idea: {idea.title}")
-    logger.debug(f"Idea data: {idea.model_dump()}")
-    logger.debug(f"Tags type: {type(idea.tags)}, value: {idea.tags}")
+    logger.info(f"Idea data: {idea.model_dump()}")
+    logger.info(f"Tags - type: {type(idea.tags)}, value: {idea.tags}, repr: {repr(idea.tags)}")
     
     try:
         # Ensure tags is a proper list

@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 import logging
+import os
 from config import settings
 from database import create_tables
 
@@ -21,14 +22,17 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Application lifespan events."""
     # Startup
-    logger.info("Starting Bright Ideas API (New Architecture)...")
+    logger.info("Starting Bright Ideas API (New Architecture v2.1)...")
     
     # Create database tables
     try:
+        logger.info("Attempting to create database tables...")
         create_tables()
-        logger.info("Database tables created successfully")
+        logger.info("✅ Database tables created successfully")
+        logger.info("Tables should include: ideas, refinement_sessions, plans")
     except Exception as e:
-        logger.error(f"Failed to create database tables: {e}")
+        logger.error(f"❌ Failed to create database tables: {e}")
+        logger.error(f"Database URL configured: {bool(os.environ.get('DATABASE_URL'))}")
         raise
     
     yield
