@@ -182,7 +182,7 @@
               <div class="flex items-center space-x-1">
                 {#if !plan.is_active}
                   <Button 
-                    size="xs" 
+                    size="sm" 
                     variant="outline"
                     on:click={(e) => handleActivate(plan, e)}
                   >
@@ -191,7 +191,7 @@
                 {/if}
                 
                 <Button 
-                  size="xs" 
+                  size="sm" 
                   variant="ghost"
                   on:click={(e) => handleExport(plan, 'markdown', e)}
                   title="Export as Markdown"
@@ -200,7 +200,7 @@
                 </Button>
                 
                 <Button 
-                  size="xs" 
+                  size="sm" 
                   variant="ghost"
                   on:click={(e) => handleExport(plan, 'json', e)}
                   title="Export as JSON"
@@ -209,7 +209,7 @@
                 </Button>
                 
                 <Button 
-                  size="xs" 
+                  size="sm" 
                   variant="ghost"
                   on:click={(e) => handleDelete(plan, e)}
                   title="Delete plan"

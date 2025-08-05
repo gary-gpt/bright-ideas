@@ -31,13 +31,17 @@ def create_idea(
     
     logger.info(f"Creating new idea: {idea.title}")
     logger.debug(f"Idea data: {idea.model_dump()}")
+    logger.debug(f"Tags type: {type(idea.tags)}, value: {idea.tags}")
     
     try:
+        # Ensure tags is a proper list
+        tags = idea.tags if isinstance(idea.tags, list) else []
+        
         # Create new idea using new model
         db_idea = Idea(
             title=idea.title,
             original_description=idea.original_description,
-            tags=idea.tags,
+            tags=tags,
             status=IdeaStatus.captured
         )
         

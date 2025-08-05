@@ -188,12 +188,12 @@
       </div>
       <div class="flex space-x-2">
         {#if showActivateButton && !plan.is_active}
-          <Button size="xs" variant="outline" on:click={handleActivate}>
+          <Button size="sm" variant="outline" on:click={handleActivate}>
             Activate
           </Button>
         {/if}
         {#if showExportButtons}
-          <Button size="xs" variant="ghost" on:click={() => handleExport('markdown')}>
+          <Button size="sm" variant="ghost" on:click={() => handleExport('markdown')}>
             Export
           </Button>
         {/if}

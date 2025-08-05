@@ -224,7 +224,7 @@
                   <div class="space-y-2">
                     <textarea
                       bind:value={answers[question.id]}
-                      on:input={(e) => handleAnswerChange(question.id, e.target.value)}
+                      on:input={(e) => handleAnswerChange(question.id, e.currentTarget.value)}
                       placeholder="Share your thoughts in detail... (minimum 20 characters for meaningful refinement)"
                       class="w-full px-3 py-3 border border-secondary-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none text-secondary-900 placeholder-secondary-400"
                       rows="4"

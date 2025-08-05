@@ -215,7 +215,7 @@
             <Button 
               size="sm" 
               variant="outline"
-              on:click={() => handleExport({ detail: { format: 'markdown' } })}
+              on:click={() => handleExport(new CustomEvent('export', { detail: { format: 'markdown' } }))}
             >
               Export Markdown
             </Button>
@@ -223,7 +223,7 @@
             <Button 
               size="sm" 
               variant="outline"
-              on:click={() => handleExport({ detail: { format: 'json' } })}
+              on:click={() => handleExport(new CustomEvent('export', { detail: { format: 'json' } }))}
             >
               Export JSON
             </Button>
@@ -233,7 +233,6 @@
               variant="ghost"
               on:click={handleDelete}
               disabled={actionLoading}
-              class="text-red-600 hover:text-red-800"
             >
               Delete Plan
             </Button>
@@ -249,7 +248,6 @@
             size="sm" 
             variant="outline"
             on:click={generateNewPlan}
-            class="justify-start"
           >
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -261,7 +259,6 @@
             size="sm" 
             variant="outline"
             href="/ideas/{ideaId}/refine"
-            class="justify-start"
           >
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -273,7 +270,6 @@
             size="sm" 
             variant="outline"
             href="/capture"
-            class="justify-start"
           >
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>

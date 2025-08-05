@@ -1,7 +1,7 @@
 /**
  * Svelte stores for idea management - New Architecture
  */
-import { writable, derived } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store';
 import type { 
   Idea, 
   IdeaDetail,
@@ -56,10 +56,11 @@ export const filteredIdeas = derived(
 
     // Apply search filter
     if ($filters.search) {
-      const searchTerm = $filters.search.toLowerCase();
+      const searchTerm = $filters.search.toLowerCase().trim();
       filtered = filtered.filter(idea => 
         idea.title.toLowerCase().includes(searchTerm) ||
-        idea.original_description.toLowerCase().includes(searchTerm)
+        idea.original_description.toLowerCase().includes(searchTerm) ||
+        idea.tags.some(tag => tag.toLowerCase().includes(searchTerm))
       );
     }
 
@@ -339,7 +340,7 @@ export const refinementActions = {
       
       // Update the idea if the session is complete
       if (updatedSession.is_complete) {
-        const currentIdeaValue = currentIdea.get();
+        const currentIdeaValue = get(currentIdea);
         if (currentIdeaValue) {
           ideaActions.loadIdea(currentIdeaValue.id); // Refresh idea data
         }

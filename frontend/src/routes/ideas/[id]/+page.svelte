@@ -76,6 +76,43 @@
     goto(`/ideas/${idea.id}/plans`);
   }
 
+  async function archiveIdea() {
+    if (!idea) return;
+    
+    if (confirm(`Archive "${idea.title}"? This will mark it as archived but not delete it.`)) {
+      loading = true;
+      try {
+        await ideaActions.updateIdea(idea.id, { status: 'archived' });
+        toastActions.success('Idea archived successfully');
+        // Refresh the idea data
+        await ideaActions.loadIdea(ideaId);
+        idea = $currentIdea;
+      } catch (error) {
+        console.error('Failed to archive idea:', error);
+        toastActions.error('Failed to archive idea');
+      } finally {
+        loading = false;
+      }
+    }
+  }
+
+  async function deleteIdea() {
+    if (!idea) return;
+    
+    if (confirm(`Delete "${idea.title}"? This action cannot be undone.`)) {
+      loading = true;
+      try {
+        await ideaActions.deleteIdea(idea.id);
+        toastActions.success('Idea deleted successfully');
+        goto('/ideas');
+      } catch (error) {
+        console.error('Failed to delete idea:', error);
+        toastActions.error('Failed to delete idea');
+        loading = false;
+      }
+    }
+  }
+
   function getNextStepAction() {
     if (!idea) return null;
     
@@ -173,6 +210,11 @@
               <Button on:click={nextStep.action}>
                 {nextStep.text}
               </Button>
+            {:else}
+              <!-- Fallback refinement button for any status -->
+              <Button on:click={startRefinement}>
+                Start Refinement
+              </Button>
             {/if}
             
             {#if idea.plans_count > 0}
@@ -181,8 +223,15 @@
               </Button>
             {/if}
             
-            <Button variant="outline" href="/ideas/{idea.id}/edit">
-              Edit Details
+            <!-- Archive/Delete Actions -->
+            {#if idea.status !== 'archived'}
+              <Button variant="outline" on:click={archiveIdea}>
+                Archive
+              </Button>
+            {/if}
+            
+            <Button variant="outline" on:click={deleteIdea}>
+              Delete
             </Button>
           </div>
         </div>

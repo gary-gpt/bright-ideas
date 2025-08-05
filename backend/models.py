@@ -31,7 +31,7 @@ class Idea(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     title = Column(String(200), nullable=False)
     original_description = Column(Text, nullable=False)
-    tags = Column(JSON, default=list)  # ["productivity", "ai", "tool"]
+    tags = Column(JSON, default=lambda: [])  # ["productivity", "ai", "tool"]
     status = Column(Enum(IdeaStatus), default=IdeaStatus.captured)
     
     # Timestamps
