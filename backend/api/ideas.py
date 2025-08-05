@@ -336,21 +336,40 @@ def delete_idea(
         try:
             # Check if old conversations table exists and delete related records
             from sqlalchemy import text
+            logger.info("Checking for legacy conversations table...")
+            
             result = db.execute(text("""
                 SELECT EXISTS (
                     SELECT FROM information_schema.tables 
-                    WHERE table_name = 'conversations'
+                    WHERE table_schema = 'public' AND table_name = 'conversations'
                 );
             """))
             conversations_table_exists = result.scalar()
+            logger.info(f"Conversations table exists: {conversations_table_exists}")
             
             if conversations_table_exists:
-                logger.info("Found legacy conversations table, cleaning up foreign key references...")
-                # Delete any conversations referencing this idea
-                db.execute(text("DELETE FROM conversations WHERE idea_id = :idea_id"), {"idea_id": idea.id})
-                logger.info("Cleaned up legacy conversation references")
+                logger.info("Found legacy conversations table, checking for references to this idea...")
+                
+                # First check how many conversations reference this idea
+                count_result = db.execute(text("SELECT COUNT(*) FROM conversations WHERE idea_id = :idea_id"), {"idea_id": idea.id})
+                conversation_count = count_result.scalar()
+                logger.info(f"Found {conversation_count} conversations referencing idea {idea.id}")
+                
+                if conversation_count > 0:
+                    logger.info(f"Deleting {conversation_count} conversation records for idea {idea.id}...")
+                    delete_result = db.execute(text("DELETE FROM conversations WHERE idea_id = :idea_id"), {"idea_id": idea.id})
+                    logger.info(f"Deleted {delete_result.rowcount} conversation records")
+                else:
+                    logger.info("No conversation records found for this idea")
+            else:
+                logger.info("No legacy conversations table found")
+                
         except Exception as cleanup_error:
-            logger.warning(f"Legacy cleanup failed (continuing anyway): {cleanup_error}")
+            logger.error(f"Legacy cleanup failed: {cleanup_error}")
+            logger.error(f"Cleanup error type: {type(cleanup_error).__name__}")
+            # Don't continue - this might cause the FK violation
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Failed to clean up legacy references: {str(cleanup_error)}")
         
         # Perform the deletion
         db.delete(idea)  # Cascading deletes will handle related records

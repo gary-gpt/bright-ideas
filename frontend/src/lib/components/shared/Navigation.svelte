@@ -11,8 +11,7 @@
     { href: '/', icon: Home, label: 'Dashboard' },
     { href: '/capture', icon: Lightbulb, label: 'Capture' },
     { href: '/ideas', icon: BookOpen, label: 'Ideas' },
-    { href: '/ideas/archive', icon: Archive, label: 'Archive' },
-    { href: '/settings', icon: Settings, label: 'Settings' }
+    { href: '/ideas/archive', icon: Archive, label: 'Archive' }
   ];
 
   $: currentPath = $page.url.pathname;
