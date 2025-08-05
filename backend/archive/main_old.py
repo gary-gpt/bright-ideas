@@ -1,5 +1,5 @@
 """
-FastAPI main application for Bright Ideas backend - New Architecture
+FastAPI main application for Bright Ideas backend.
 """
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,9 +8,7 @@ from contextlib import asynccontextmanager
 import logging
 from config import settings
 from database import create_tables
-
-# Import API routers
-from api import ideas, refinement, plans
+from api import ideas, conversations, planning
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -21,7 +19,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Application lifespan events."""
     # Startup
-    logger.info("Starting Bright Ideas API (New Architecture)...")
+    logger.info("Starting Bright Ideas API...")
     
     # Create database tables
     try:
@@ -40,8 +38,8 @@ async def lifespan(app: FastAPI):
 # Create FastAPI application
 app = FastAPI(
     title="Bright Ideas API",
-    description="AI-powered structured idea refinement and planning tool",
-    version="2.0.0",
+    description="AI-powered brainstorming and planning tool backend",
+    version="1.0.0",
     docs_url="/docs" if settings.debug else None,
     redoc_url="/redoc" if settings.debug else None,
     lifespan=lifespan
@@ -93,16 +91,9 @@ async def health_check():
     """API health check endpoint."""
     return {
         "status": "healthy",
-        "version": "2.0.0",
-        "architecture": "structured_refinement",
+        "version": "1.0.0",
         "environment": settings.environment,
-        "cors_origins": settings.cors_origins,
-        "features": [
-            "ai_question_generation",
-            "structured_refinement",
-            "plan_generation",
-            "plan_export"
-        ]
+        "cors_origins": settings.cors_origins  # Debug info
     }
 
 
@@ -111,24 +102,16 @@ async def health_check():
 async def root():
     """API root endpoint."""
     return {
-        "message": "Welcome to Bright Ideas API - Structured Refinement System",
-        "version": "2.0.0",
-        "architecture": "AI-powered idea refinement with structured planning",
-        "docs": "/docs" if settings.debug else "Contact admin for API documentation",
-        "workflow": {
-            "1": "Capture idea (/ideas/)",
-            "2": "Start refinement session (/refinement/sessions/)", 
-            "3": "Answer AI-generated questions (/refinement/sessions/{id}/answers/)",
-            "4": "Generate implementation plan (/plans/generate/)",
-            "5": "Export plan (/plans/{id}/export/json or /plans/{id}/export/markdown)"
-        }
+        "message": "Welcome to Bright Ideas API",
+        "version": "1.0.0",
+        "docs": "/docs" if settings.debug else "Contact admin for API documentation"
     }
 
 
 # Include API routers
 app.include_router(ideas.router, prefix=settings.api_prefix)
-app.include_router(refinement.router, prefix=settings.api_prefix)
-app.include_router(plans.router, prefix=settings.api_prefix)
+app.include_router(conversations.router, prefix=settings.api_prefix)
+app.include_router(planning.router, prefix=settings.api_prefix)
 
 
 if __name__ == "__main__":

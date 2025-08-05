@@ -1,16 +1,22 @@
 """
-API routes for idea management.
+Updated API routes for idea management - New Architecture
 """
 from typing import List, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func
+
 from database import get_db
-from schemas import IdeaCreate, IdeaUpdate, IdeaResponse
-from services.idea_service import IdeaService
+from models import Idea, RefinementSession, Plan, IdeaStatus
+from schemas import (
+    IdeaCreate, 
+    IdeaUpdate, 
+    IdeaResponse, 
+    IdeaDetailResponse
+)
 
 router = APIRouter(prefix="/ideas", tags=["ideas"])
-
 
 @router.post("/", response_model=IdeaResponse)
 def create_idea(
@@ -18,14 +24,7 @@ def create_idea(
     db: Session = Depends(get_db)
 ):
     """
-    Create a new idea.
-    
-    Args:
-        idea: Idea creation data
-        db: Database session
-        
-    Returns:
-        Created idea
+    Create a new idea with the new architecture
     """
     import logging
     logger = logging.getLogger(__name__)
@@ -34,14 +33,40 @@ def create_idea(
     logger.debug(f"Idea data: {idea.model_dump()}")
     
     try:
-        service = IdeaService(db)
-        db_idea = service.create_idea(idea)
+        # Create new idea using new model
+        db_idea = Idea(
+            title=idea.title,
+            original_description=idea.original_description,
+            tags=idea.tags,
+            status=IdeaStatus.captured
+        )
+        
+        db.add(db_idea)
+        db.commit()
+        db.refresh(db_idea)
+        
         logger.info(f"Successfully created idea with ID: {db_idea.id}")
-        return db_idea
+        
+        # Return with computed fields
+        response = IdeaResponse(
+            id=db_idea.id,
+            title=db_idea.title,
+            original_description=db_idea.original_description,
+            tags=db_idea.tags,
+            status=db_idea.status.value,
+            created_at=db_idea.created_at,
+            updated_at=db_idea.updated_at,
+            refinement_sessions_count=0,
+            plans_count=0,
+            has_active_plan=False
+        )
+        
+        return response
+        
     except Exception as e:
         logger.error(f"Failed to create idea: {e}")
-        raise
-
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create idea: {str(e)}")
 
 @router.get("/", response_model=List[IdeaResponse])
 def get_ideas(
@@ -53,44 +78,86 @@ def get_ideas(
     db: Session = Depends(get_db)
 ):
     """
-    Get ideas with optional filtering.
-    
-    Args:
-        skip: Number of records to skip
-        limit: Maximum number of records to return
-        search: Search term for title and description
-        tags: Filter by tags
-        status: Filter by status
-        db: Database session
-        
-    Returns:
-        List of ideas
+    Get ideas with optional filtering and related data counts
     """
-    service = IdeaService(db)
-    ideas = service.get_ideas(
-        skip=skip,
-        limit=limit,
-        search=search,
-        tags=tags,
-        status=status
-    )
-    return ideas
-
+    query = db.query(Idea)
+    
+    # Apply filters
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            (Idea.title.ilike(search_term)) |
+            (Idea.original_description.ilike(search_term))
+        )
+    
+    if tags:
+        # Filter by tags (JSON array contains any of the specified tags)
+        for tag in tags:
+            query = query.filter(func.json_array_length(Idea.tags.op('?')(tag)) > 0)
+    
+    if status:
+        try:
+            status_enum = IdeaStatus(status)
+            query = query.filter(Idea.status == status_enum)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
+    
+    # Order by most recent first
+    query = query.order_by(Idea.updated_at.desc())
+    
+    # Apply pagination
+    ideas = query.offset(skip).limit(limit).all()
+    
+    # Build response with computed fields
+    response_ideas = []
+    for idea in ideas:
+        sessions_count = len(idea.refinement_sessions)
+        plans_count = len(idea.plans)
+        has_active_plan = idea.active_plan is not None
+        
+        response_ideas.append(IdeaResponse(
+            id=idea.id,
+            title=idea.title,
+            original_description=idea.original_description,
+            tags=idea.tags,
+            status=idea.status.value,
+            created_at=idea.created_at,
+            updated_at=idea.updated_at,
+            refinement_sessions_count=sessions_count,
+            plans_count=plans_count,
+            has_active_plan=has_active_plan
+        ))
+    
+    return response_ideas
 
 @router.get("/stats")
 def get_idea_stats(db: Session = Depends(get_db)):
     """
-    Get statistics about ideas.
-    
-    Args:
-        db: Database session
-        
-    Returns:
-        Idea statistics
+    Get statistics about ideas in the new architecture
     """
-    service = IdeaService(db)
-    return service.get_idea_stats()
-
+    total_ideas = db.query(Idea).count()
+    
+    # Count by status
+    status_counts = {}
+    for status in IdeaStatus:
+        count = db.query(Idea).filter(Idea.status == status).count()
+        status_counts[status.value] = count
+    
+    # Other stats
+    ideas_with_plans = db.query(Idea).join(Plan).distinct().count()
+    total_sessions = db.query(RefinementSession).count()
+    completed_sessions = db.query(RefinementSession).filter(
+        RefinementSession.is_complete == True
+    ).count()
+    
+    return {
+        "total_ideas": total_ideas,
+        "status_counts": status_counts,
+        "ideas_with_plans": ideas_with_plans,
+        "total_refinement_sessions": total_sessions,
+        "completed_refinement_sessions": completed_sessions,
+        "average_sessions_per_idea": round(total_sessions / max(total_ideas, 1), 2)
+    }
 
 @router.get("/recent", response_model=List[IdeaResponse])
 def get_recent_ideas(
@@ -98,42 +165,67 @@ def get_recent_ideas(
     db: Session = Depends(get_db)
 ):
     """
-    Get recently updated ideas.
-    
-    Args:
-        limit: Maximum number of ideas to return
-        db: Database session
-        
-    Returns:
-        List of recent ideas
+    Get recently updated ideas
     """
-    service = IdeaService(db)
-    return service.get_recent_ideas(limit=limit)
+    ideas = db.query(Idea).order_by(
+        Idea.updated_at.desc()
+    ).limit(limit).all()
+    
+    response_ideas = []
+    for idea in ideas:
+        sessions_count = len(idea.refinement_sessions)
+        plans_count = len(idea.plans)
+        has_active_plan = idea.active_plan is not None
+        
+        response_ideas.append(IdeaResponse(
+            id=idea.id,
+            title=idea.title,
+            original_description=idea.original_description,
+            tags=idea.tags,
+            status=idea.status.value,
+            created_at=idea.created_at,
+            updated_at=idea.updated_at,
+            refinement_sessions_count=sessions_count,
+            plans_count=plans_count,
+            has_active_plan=has_active_plan
+        ))
+    
+    return response_ideas
 
-
-@router.get("/{idea_id}", response_model=IdeaResponse)
+@router.get("/{idea_id}", response_model=IdeaDetailResponse)
 def get_idea(
     idea_id: UUID,
     db: Session = Depends(get_db)
 ):
     """
-    Get a specific idea by ID.
-    
-    Args:
-        idea_id: UUID of the idea
-        db: Database session
-        
-    Returns:
-        Idea details
+    Get a specific idea with full related data
     """
-    service = IdeaService(db)
-    db_idea = service.get_idea(idea_id)
+    idea = db.query(Idea).filter(Idea.id == idea_id).first()
     
-    if not db_idea:
+    if not idea:
         raise HTTPException(status_code=404, detail="Idea not found")
     
-    return db_idea
-
+    # Build detailed response
+    sessions_count = len(idea.refinement_sessions)
+    plans_count = len(idea.plans)
+    has_active_plan = idea.active_plan is not None
+    
+    response = IdeaDetailResponse(
+        id=idea.id,
+        title=idea.title,
+        original_description=idea.original_description,
+        tags=idea.tags,
+        status=idea.status.value,
+        created_at=idea.created_at,
+        updated_at=idea.updated_at,
+        refinement_sessions_count=sessions_count,
+        plans_count=plans_count,
+        has_active_plan=has_active_plan,
+        latest_session=idea.latest_session,
+        active_plan=idea.active_plan
+    )
+    
+    return response
 
 @router.put("/{idea_id}", response_model=IdeaResponse)
 def update_idea(
@@ -142,24 +234,49 @@ def update_idea(
     db: Session = Depends(get_db)
 ):
     """
-    Update an existing idea.
-    
-    Args:
-        idea_id: UUID of the idea to update
-        idea_update: Updated idea data
-        db: Database session
-        
-    Returns:
-        Updated idea
+    Update an existing idea
     """
-    service = IdeaService(db)
-    db_idea = service.update_idea(idea_id, idea_update)
+    idea = db.query(Idea).filter(Idea.id == idea_id).first()
     
-    if not db_idea:
+    if not idea:
         raise HTTPException(status_code=404, detail="Idea not found")
     
-    return db_idea
-
+    # Update fields if provided
+    if idea_update.title is not None:
+        idea.title = idea_update.title
+    
+    if idea_update.original_description is not None:
+        idea.original_description = idea_update.original_description
+    
+    if idea_update.tags is not None:
+        idea.tags = idea_update.tags
+    
+    if idea_update.status is not None:
+        try:
+            idea.status = IdeaStatus(idea_update.status)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid status: {idea_update.status}")
+    
+    db.commit()
+    db.refresh(idea)
+    
+    # Return response with computed fields
+    sessions_count = len(idea.refinement_sessions)
+    plans_count = len(idea.plans)
+    has_active_plan = idea.active_plan is not None
+    
+    return IdeaResponse(
+        id=idea.id,
+        title=idea.title,
+        original_description=idea.original_description,
+        tags=idea.tags,
+        status=idea.status.value,
+        created_at=idea.created_at,
+        updated_at=idea.updated_at,
+        refinement_sessions_count=sessions_count,
+        plans_count=plans_count,
+        has_active_plan=has_active_plan
+    )
 
 @router.delete("/{idea_id}")
 def delete_idea(
@@ -167,19 +284,98 @@ def delete_idea(
     db: Session = Depends(get_db)
 ):
     """
-    Delete an idea and all related data.
-    
-    Args:
-        idea_id: UUID of the idea to delete
-        db: Database session
-        
-    Returns:
-        Success message
+    Delete an idea and all related data (cascading)
     """
-    service = IdeaService(db)
-    success = service.delete_idea(idea_id)
+    idea = db.query(Idea).filter(Idea.id == idea_id).first()
     
-    if not success:
+    if not idea:
         raise HTTPException(status_code=404, detail="Idea not found")
     
+    db.delete(idea)  # Cascading deletes will handle related records
+    db.commit()
+    
     return {"message": "Idea deleted successfully"}
+
+@router.get("/{idea_id}/summary")
+def get_idea_summary(
+    idea_id: UUID,
+    db: Session = Depends(get_db)
+):
+    """
+    Get a comprehensive summary of an idea's progress through the system
+    """
+    idea = db.query(Idea).filter(Idea.id == idea_id).first()
+    
+    if not idea:
+        raise HTTPException(status_code=404, detail="Idea not found")
+    
+    # Gather all related data
+    sessions = idea.refinement_sessions
+    plans = idea.plans
+    active_plan = idea.active_plan
+    
+    summary = {
+        "idea": {
+            "id": str(idea.id),
+            "title": idea.title,
+            "description": idea.original_description,
+            "status": idea.status.value,
+            "tags": idea.tags,
+            "created_at": idea.created_at.isoformat(),
+            "updated_at": idea.updated_at.isoformat()
+        },
+        "refinement_progress": {
+            "total_sessions": len(sessions),
+            "completed_sessions": len([s for s in sessions if s.is_complete]),
+            "latest_session": sessions[0] if sessions else None
+        },
+        "planning_progress": {
+            "total_plans": len(plans),
+            "has_active_plan": active_plan is not None,
+            "active_plan_id": str(active_plan.id) if active_plan else None
+        },
+        "next_steps": _get_suggested_next_steps(idea)
+    }
+    
+    return summary
+
+def _get_suggested_next_steps(idea: Idea) -> List[str]:
+    """
+    Suggest next steps based on idea's current state
+    """
+    if idea.status == IdeaStatus.captured:
+        return [
+            "Start a refinement session to get AI-generated questions",
+            "Add more descriptive tags to categorize your idea"
+        ]
+    elif idea.status == IdeaStatus.refining:
+        incomplete_sessions = [s for s in idea.refinement_sessions if not s.is_complete]
+        if incomplete_sessions:
+            return [
+                "Complete the current refinement session by answering all questions",
+                "Generate an implementation plan from your completed answers"
+            ]
+        else:
+            return [
+                "Generate an implementation plan from your refinement session",
+                "Start a new refinement session to explore different angles"
+            ]
+    elif idea.status == IdeaStatus.planned:
+        if not idea.active_plan:
+            return [
+                "Activate one of your generated plans",
+                "Export your plan to start implementation"
+            ]
+        else:
+            return [
+                "Export your active plan as JSON or Markdown",
+                "Begin implementing the steps in your plan",
+                "Create a new refinement session to explore variations"
+            ]
+    elif idea.status == IdeaStatus.archived:
+        return [
+            "Restore this idea to continue working on it",
+            "Use it as inspiration for new ideas"
+        ]
+    
+    return ["Continue developing your idea"]

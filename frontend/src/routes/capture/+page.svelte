@@ -28,9 +28,9 @@
       });
 
       console.log('Idea created successfully:', newIdea);
-      toastActions.success('Idea captured successfully!');
+      toastActions.success('Idea captured successfully! Starting AI refinement...');
       
-      // Navigate to refinement page to continue with AI assistance
+      // Navigate to refinement page to continue with structured AI assistance
       goto(`/ideas/${newIdea.id}/refine`);
     } catch (error) {
       console.error('Failed to create idea - detailed error:', {

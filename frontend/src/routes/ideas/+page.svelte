@@ -28,9 +28,9 @@
   function getStatusColor(status: string): string {
     const colors = {
       captured: 'bg-blue-100 text-blue-800 border-blue-200',
-      refined: 'bg-green-100 text-green-800 border-green-200',
-      building: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      completed: 'bg-purple-100 text-purple-800 border-purple-200'
+      refining: 'bg-yellow-100 text-yellow-800 border-yellow-200', // Updated from 'refined'
+      planned: 'bg-green-100 text-green-800 border-green-200',     // Updated from 'building'
+      archived: 'bg-gray-100 text-gray-800 border-gray-200'        // Updated from 'completed'
     };
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-200';
   }
@@ -144,9 +144,9 @@
             >
               <option value="">All statuses</option>
               <option value="captured">Captured</option>
-              <option value="refined">Refined</option>
-              <option value="building">Building</option>
-              <option value="completed">Completed</option>
+              <option value="refining">Refining</option>
+              <option value="planned">Planned</option>
+              <option value="archived">Archived</option>
             </select>
           </div>
 
@@ -230,7 +230,7 @@
               </div>
               
               <p class="text-secondary-600 text-sm mb-4 line-clamp-3">
-                {idea.refined_description || idea.original_description}
+                {idea.original_description}
               </p>
               
               <div class="flex flex-wrap gap-2 mb-4">
@@ -272,7 +272,7 @@
                   </div>
                   
                   <p class="text-secondary-600 mb-3 line-clamp-2">
-                    {idea.refined_description || idea.original_description}
+                    {idea.original_description}
                   </p>
                   
                   <div class="flex items-center justify-between">

@@ -1,84 +1,148 @@
 """
-SQLAlchemy database models for Bright Ideas.
+Updated SQLAlchemy models for Bright Ideas - Structured Refinement System
 """
-import uuid
-from datetime import datetime
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, ARRAY
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Column, String, Text, DateTime, Boolean, JSON, ForeignKey, Enum
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from database import Base
+from datetime import datetime
+from uuid import uuid4
+import enum
 
+Base = declarative_base()
+
+# Enums
+class IdeaStatus(str, enum.Enum):
+    captured = "captured"
+    refining = "refining" 
+    planned = "planned"
+    archived = "archived"
+
+class PlanStatus(str, enum.Enum):
+    draft = "draft"
+    generated = "generated"
+    edited = "edited"
+    published = "published"
 
 class Idea(Base):
-    """
-    Core idea model storing brainstormed concepts.
-    """
+    """Core idea entity - the starting point for everything"""
     __tablename__ = "ideas"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     title = Column(String(200), nullable=False)
     original_description = Column(Text, nullable=False)
-    refined_description = Column(Text)
-    problem_statement = Column(Text)
-    target_audience = Column(Text)
-    implementation_notes = Column(JSONB, default=dict)
-    tags = Column(ARRAY(String), default=list)
-    status = Column(String(20), default="captured")  # captured, refined, building, completed
+    tags = Column(JSON, default=list)  # ["productivity", "ai", "tool"]
+    status = Column(Enum(IdeaStatus), default=IdeaStatus.captured)
+    
+    # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    conversations = relationship("Conversation", back_populates="idea", cascade="all, delete-orphan")
-    build_plans = relationship("BuildPlan", back_populates="idea", cascade="all, delete-orphan")
+    refinement_sessions = relationship(
+        "RefinementSession", 
+        back_populates="idea", 
+        cascade="all, delete-orphan",
+        order_by="RefinementSession.created_at.desc()"
+    )
+    plans = relationship(
+        "Plan", 
+        back_populates="idea", 
+        cascade="all, delete-orphan",
+        order_by="Plan.created_at.desc()"
+    )
 
+    @property
+    def active_plan(self):
+        """Get the currently active plan for this idea"""
+        for plan in self.plans:
+            if plan.is_active:
+                return plan
+        return None
 
-class Conversation(Base):
-    """
-    AI conversation history for idea refinement and build planning.
-    """
-    __tablename__ = "conversations"
+    @property
+    def latest_session(self):
+        """Get the most recent refinement session"""
+        return self.refinement_sessions[0] if self.refinement_sessions else None
+
+class RefinementSession(Base):
+    """AI-generated questions and user answers for idea refinement"""
+    __tablename__ = "refinement_sessions"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     idea_id = Column(UUID(as_uuid=True), ForeignKey("ideas.id"), nullable=False)
-    mode = Column(String(20), nullable=False)  # capture, build
-    messages = Column(JSONB, default=list)  # [{"role": "user|assistant", "content": "...", "timestamp": "..."}]
-    context = Column(JSONB, default=dict)  # Additional context data
+    
+    # AI-generated questions and user answers
+    questions = Column(JSON, nullable=False)  
+    # Format: [{"id": "q1", "question": "Who are the target users?"}, ...]
+    
+    answers = Column(JSON, default=dict)      
+    # Format: {"q1": "Busy professionals who get 50+ newsletters", "q2": "..."}
+    
+    # Session metadata
+    is_complete = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+    
+    # Store the LLM prompt used to generate questions (for debugging/improvement)
+    generation_prompt = Column(Text, nullable=True)
     
     # Relationships
-    idea = relationship("Idea", back_populates="conversations")
+    idea = relationship("Idea", back_populates="refinement_sessions")
+    plans = relationship("Plan", back_populates="refinement_session")
 
+    def mark_complete(self):
+        """Mark this session as complete"""
+        self.is_complete = True
+        self.completed_at = datetime.utcnow()
 
-class BuildPlan(Base):
-    """
-    Structured build plans generated from refined ideas.
-    """
-    __tablename__ = "build_plans"
+class Plan(Base):
+    """Generated implementation plan based on refined idea"""
+    __tablename__ = "plans"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     idea_id = Column(UUID(as_uuid=True), ForeignKey("ideas.id"), nullable=False)
-    plan_data = Column(JSONB, nullable=False)  # {components: [], phases: [], tasks: []}
-    export_configs = Column(JSONB, default=dict)  # Export format preferences
+    refinement_session_id = Column(UUID(as_uuid=True), ForeignKey("refinement_sessions.id"), nullable=True)
+    
+    # Plan content (structured)
+    summary = Column(Text, nullable=False)  # 1-paragraph overview
+    steps = Column(JSON, nullable=False)    # [{"order": 1, "title": "...", "description": "...", "estimated_time": "2 hours"}]
+    resources = Column(JSON, default=list) # [{"title": "Figma", "url": "...", "type": "tool", "description": "..."}]
+    
+    # Plan metadata
+    status = Column(Enum(PlanStatus), default=PlanStatus.generated)
+    is_active = Column(Boolean, default=False)  # Only one active plan per idea
+    content_markdown = Column(Text, nullable=True)  # Human-readable version
+    
+    # Generation metadata
+    generation_prompt = Column(Text, nullable=True)  # LLM prompt used
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    idea = relationship("Idea", back_populates="build_plans")
-    exports = relationship("Export", back_populates="build_plan", cascade="all, delete-orphan")
+    idea = relationship("Idea", back_populates="plans")
+    refinement_session = relationship("RefinementSession", back_populates="plans")
 
+    def activate(self):
+        """Make this the active plan (deactivates others for same idea)"""
+        # Deactivate other plans for this idea
+        for plan in self.idea.plans:
+            if plan.id != self.id:
+                plan.is_active = False
+        self.is_active = True
 
-class Export(Base):
-    """
-    Generated export files from build plans.
-    """
-    __tablename__ = "exports"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    build_plan_id = Column(UUID(as_uuid=True), ForeignKey("build_plans.id"), nullable=False)
-    export_type = Column(String(50), nullable=False)  # markdown, json, zip, etc.
-    file_data = Column(JSONB, nullable=False)  # {filename: content, ...}
-    created_at = Column(DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    build_plan = relationship("BuildPlan", back_populates="exports")
+    def to_export_dict(self):
+        """Generate export-ready dictionary"""
+        return {
+            "idea": {
+                "title": self.idea.title,
+                "description": self.idea.original_description,
+                "tags": self.idea.tags
+            },
+            "plan": {
+                "summary": self.summary,
+                "steps": self.steps,
+                "resources": self.resources,
+                "status": self.status.value
+            }
+        }

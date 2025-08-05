@@ -1,19 +1,29 @@
 /**
- * TypeScript type definitions for Bright Ideas frontend
+ * TypeScript type definitions for Bright Ideas frontend - New Architecture
  */
+
+// ====================================
+// CORE DATA TYPES (matching backend)
+// ====================================
 
 export interface Idea {
   id: string;
   title: string;
   original_description: string;
-  refined_description?: string;
-  problem_statement?: string;
-  target_audience?: string;
-  implementation_notes: Record<string, any>;
   tags: string[];
-  status: 'captured' | 'refined' | 'building' | 'completed';
+  status: 'captured' | 'refining' | 'planned' | 'archived';
   created_at: string;
   updated_at: string;
+  
+  // Computed fields from backend
+  refinement_sessions_count: number;
+  plans_count: number;
+  has_active_plan: boolean;
+}
+
+export interface IdeaDetail extends Idea {
+  latest_session?: RefinementSession;
+  active_plan?: Plan;
 }
 
 export interface IdeaCreate {
@@ -24,108 +34,87 @@ export interface IdeaCreate {
 
 export interface IdeaUpdate {
   title?: string;
-  refined_description?: string;
-  problem_statement?: string;
-  target_audience?: string;
-  implementation_notes?: Record<string, any>;
+  original_description?: string;
   tags?: string[];
-  status?: 'captured' | 'refined' | 'building' | 'completed';
+  status?: 'captured' | 'refining' | 'planned' | 'archived';
 }
 
-export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp: string;
-  metadata?: {
-    questions?: string[];
-    refined_data?: Record<string, any>;
-  };
+// ====================================
+// REFINEMENT TYPES
+// ====================================
+
+export interface RefinementQuestion {
+  id: string;
+  question: string;
 }
 
-export interface Conversation {
+export interface RefinementSession {
   id: string;
   idea_id: string;
-  mode: 'capture' | 'build';
-  messages: ChatMessage[];
-  context: Record<string, any>;
+  questions: RefinementQuestion[];
+  answers: Record<string, string>; // question_id -> answer
+  is_complete: boolean;
   created_at: string;
-  updated_at: string;
+  completed_at?: string;
 }
 
-export interface ConversationCreate {
+export interface RefinementSessionCreate {
   idea_id: string;
-  mode: 'capture' | 'build';
-  initial_message?: string;
 }
 
-export interface MessageCreate {
-  content: string;
-  role: 'user' | 'assistant';
+export interface RefinementAnswersSubmit {
+  answers: Record<string, string>;
 }
 
-export interface ChatRequest {
-  message: string;
-  conversation_id?: string;
-  context?: Record<string, any>;
-}
+// ====================================
+// PLAN TYPES
+// ====================================
 
-export interface ChatResponse {
-  message: string;
-  conversation_id: string;
-  suggestions?: string[];
-  context?: Record<string, any>;
-}
-
-export interface BuildPlan {
-  id: string;
-  idea_id: string;
-  plan_data: {
-    overview: string;
-    components: PlanComponent[];
-    phases: PlanPhase[];
-    success_criteria: string[];
-    full_content?: string;
-  };
-  export_configs: Record<string, any>;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface PlanComponent {
-  name: string;
+export interface PlanStep {
+  order: number;
+  title: string;
   description: string;
+  estimated_time?: string;
 }
 
-export interface PlanPhase {
-  name: string;
-  duration: string;
-  tasks: string[];
-  deliverables: string[];
+export interface PlanResource {
+  title: string;
+  url?: string;
+  type: string; // 'tool', 'article', 'service', etc.
+  description?: string;
 }
 
-export interface BuildPlanCreate {
-  idea_id: string;
-  plan_data: Record<string, any>;
-}
-
-export interface BuildPlanUpdate {
-  plan_data?: Record<string, any>;
-  export_configs?: Record<string, any>;
-}
-
-export interface Export {
+export interface Plan {
   id: string;
-  build_plan_id: string;
-  export_type: string;
-  file_data: Record<string, string>;
+  idea_id: string;
+  refinement_session_id?: string;
+  summary: string;
+  steps: PlanStep[];
+  resources: PlanResource[];
+  status: 'draft' | 'generated' | 'edited' | 'published';
+  is_active: boolean;
+  content_markdown?: string;
   created_at: string;
+  updated_at: string;
 }
 
-export interface ExportCreate {
-  build_plan_id: string;
-  export_type: string;
-  file_data: Record<string, string>;
+export interface PlanCreate {
+  refinement_session_id: string;
+  summary: string;
+  steps: PlanStep[];
+  resources: PlanResource[];
 }
+
+export interface PlanUpdate {
+  summary?: string;
+  steps?: PlanStep[];
+  resources?: PlanResource[];
+  status?: 'draft' | 'generated' | 'edited' | 'published';
+}
+
+// ====================================
+// API RESPONSE TYPES
+// ====================================
 
 export interface ApiError {
   detail: string;
@@ -133,11 +122,40 @@ export interface ApiError {
 
 export interface IdeaStats {
   total_ideas: number;
-  status_distribution: Record<string, number>;
-  popular_tags: [string, number][];
+  status_counts: Record<string, number>;
+  ideas_with_plans: number;
+  total_refinement_sessions: number;
+  completed_refinement_sessions: number;
+  average_sessions_per_idea: number;
 }
 
-// UI State Types
+export interface IdeaSummary {
+  idea: {
+    id: string;
+    title: string;
+    description: string;
+    status: string;
+    tags: string[];
+    created_at: string;
+    updated_at: string;
+  };
+  refinement_progress: {
+    total_sessions: number;
+    completed_sessions: number;
+    latest_session?: RefinementSession;
+  };
+  planning_progress: {
+    total_plans: number;
+    has_active_plan: boolean;
+    active_plan_id?: string;
+  };
+  next_steps: string[];
+}
+
+// ====================================
+// UI STATE TYPES
+// ====================================
+
 export interface Toast {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';
@@ -157,11 +175,18 @@ export interface Modal {
   size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-// Form Types
+// ====================================
+// FORM TYPES
+// ====================================
+
 export interface IdeaCaptureForm {
   title: string;
   description: string;
   tags: string[];
+}
+
+export interface RefinementForm {
+  answers: Record<string, string>;
 }
 
 export interface SearchFilters {
@@ -172,7 +197,10 @@ export interface SearchFilters {
   sortOrder?: 'asc' | 'desc';
 }
 
-// Navigation Types
+// ====================================
+// NAVIGATION TYPES
+// ====================================
+
 export interface NavItem {
   label: string;
   href: string;
@@ -184,3 +212,40 @@ export interface BreadcrumbItem {
   label: string;
   href?: string;
 }
+
+// ====================================
+// COMPONENT PROPS TYPES
+// ====================================
+
+export interface RefinementFormProps {
+  questions: RefinementQuestion[];
+  answers: Record<string, string>;
+  loading?: boolean;
+  onSubmit: (answers: Record<string, string>) => void;
+}
+
+export interface PlanViewerProps {
+  plan: Plan;
+  showExportButtons?: boolean;
+  onExport?: (format: 'json' | 'markdown') => void;
+}
+
+export interface ProgressIndicatorProps {
+  current: number;
+  total: number;
+  label?: string;
+}
+
+// ====================================
+// DEPRECATED TYPES (for cleanup reference)
+// ====================================
+
+// These types are no longer used with the new architecture:
+// - ChatMessage (replaced with structured Q&A)
+// - Conversation (replaced with RefinementSession)  
+// - ConversationCreate (replaced with RefinementSessionCreate)
+// - MessageCreate (no longer needed)
+// - ChatRequest/ChatResponse (replaced with structured submission)
+// - BuildPlan (replaced with Plan)
+// - BuildPlanCreate/Update (replaced with PlanCreate/Update)
+// - Export/ExportCreate (simplified to direct download)

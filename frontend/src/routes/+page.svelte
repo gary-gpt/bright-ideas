@@ -14,7 +14,7 @@
   let loading = true;
   let stats = {
     total_ideas: 0,
-    status_distribution: { captured: 0, refined: 0, building: 0, completed: 0 },
+    status_distribution: { captured: 0, refining: 0, planned: 0, archived: 0 },
     popular_tags: []
   };
 
@@ -39,9 +39,9 @@
   function getStatusColor(status: string): string {
     const colors = {
       captured: 'bg-blue-100 text-blue-800',
-      refined: 'bg-green-100 text-green-800',
-      building: 'bg-yellow-100 text-yellow-800',
-      completed: 'bg-purple-100 text-purple-800'
+      refining: 'bg-yellow-100 text-yellow-800',
+      planned: 'bg-green-100 text-green-800',
+      archived: 'bg-gray-100 text-gray-800'
     };
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   }
@@ -135,8 +135,8 @@
             <BookOpen size={20} class="text-green-600" />
           </div>
           <div class="ml-3">
-            <p class="text-sm font-medium text-secondary-600">Refined</p>
-            <p class="text-2xl font-bold text-secondary-900">{stats.status_distribution.refined}</p>
+            <p class="text-sm font-medium text-secondary-600">Refining</p>
+            <p class="text-2xl font-bold text-secondary-900">{stats.status_distribution.refining}</p>
           </div>
         </div>
       </div>
@@ -147,8 +147,8 @@
             <Clock size={20} class="text-yellow-600" />
           </div>
           <div class="ml-3">
-            <p class="text-sm font-medium text-secondary-600">Building</p>
-            <p class="text-2xl font-bold text-secondary-900">{stats.status_distribution.building}</p>
+            <p class="text-sm font-medium text-secondary-600">Planned</p>
+            <p class="text-2xl font-bold text-secondary-900">{stats.status_distribution.planned}</p>
           </div>
         </div>
       </div>
@@ -159,8 +159,8 @@
             <TrendingUp size={20} class="text-purple-600" />
           </div>
           <div class="ml-3">
-            <p class="text-sm font-medium text-secondary-600">Completed</p>
-            <p class="text-2xl font-bold text-secondary-900">{stats.status_distribution.completed}</p>
+            <p class="text-sm font-medium text-secondary-600">Archived</p>
+            <p class="text-2xl font-bold text-secondary-900">{stats.status_distribution.archived}</p>
           </div>
         </div>
       </div>
@@ -208,7 +208,7 @@
                     </span>
                   </div>
                   <p class="text-secondary-600 mb-3 line-clamp-2">
-                    {idea.refined_description || idea.original_description}
+                    {idea.original_description}
                   </p>
                   <div class="flex items-center justify-between">
                     <div class="flex flex-wrap gap-2">
