@@ -332,6 +332,26 @@ def delete_idea(
         except Exception as rel_error:
             logger.warning(f"Could not count relationships: {rel_error}")
         
+        # Handle legacy foreign key constraints from old architecture
+        try:
+            # Check if old conversations table exists and delete related records
+            from sqlalchemy import text
+            result = db.execute(text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = 'conversations'
+                );
+            """))
+            conversations_table_exists = result.scalar()
+            
+            if conversations_table_exists:
+                logger.info("Found legacy conversations table, cleaning up foreign key references...")
+                # Delete any conversations referencing this idea
+                db.execute(text("DELETE FROM conversations WHERE idea_id = :idea_id"), {"idea_id": idea.id})
+                logger.info("Cleaned up legacy conversation references")
+        except Exception as cleanup_error:
+            logger.warning(f"Legacy cleanup failed (continuing anyway): {cleanup_error}")
+        
         # Perform the deletion
         db.delete(idea)  # Cascading deletes will handle related records
         db.commit()
