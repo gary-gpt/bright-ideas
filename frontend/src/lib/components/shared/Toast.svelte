@@ -38,7 +38,7 @@
 </script>
 
 <div
-  class="max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto border {colorClasses[toast.type]}"
+  class="w-full bg-white shadow-lg rounded-lg pointer-events-auto border {colorClasses[toast.type]}"
   transition:fly={{ x: 400, duration: 300 }}
 >
   <div class="p-4">
@@ -46,8 +46,8 @@
       <div class="flex-shrink-0 {iconColorClasses[toast.type]}">
         <svelte:component this={icons[toast.type]} size={20} />
       </div>
-      <div class="ml-3 w-0 flex-1">
-        <p class="text-sm font-medium">
+      <div class="ml-3 flex-1 min-w-0">
+        <p class="text-sm font-medium break-words">
           {toast.message}
         </p>
       </div>

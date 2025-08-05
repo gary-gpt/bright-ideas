@@ -39,12 +39,22 @@ def clean_orphaned_tables():
         inspector = inspect(engine)
         existing_tables = inspector.get_table_names()
         
-        # Define orphaned tables from old architecture
-        orphaned_tables = ['conversations', 'build_plans', 'exports']
+        logger.info(f"Found existing tables: {existing_tables}")
+        
+        # Define orphaned tables from old architecture in dependency order
+        # Drop dependent tables first to avoid constraint violations
+        orphaned_tables = ['exports', 'conversations', 'build_plans']
         
         for table in orphaned_tables:
             if table in existing_tables:
                 logger.info(f"Dropping orphaned table: {table}")
+                db.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
+        
+        # Also drop any other tables that might exist but aren't in our current model
+        current_model_tables = {'ideas', 'refinement_sessions', 'plans'}
+        for table in existing_tables:
+            if table not in current_model_tables and not table.startswith('alembic'):
+                logger.info(f"Dropping unknown table: {table}")
                 db.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
         
         db.commit()
@@ -52,6 +62,7 @@ def clean_orphaned_tables():
         return True
     except Exception as e:
         logger.error(f"❌ Failed to clean orphaned tables: {e}")
+        logger.error(f"Full error details: {type(e).__name__}: {str(e)}")
         db.rollback()
         return False
     finally:
@@ -126,22 +137,42 @@ def main():
     """Main migration function"""
     logger.info("🚀 Starting PostgreSQL JSON schema fix...")
     
-    # Step 1: Backup existing data
-    logger.info("Step 1: Backing up existing ideas...")
-    backup_ideas = backup_existing_ideas()
-    
-    # Step 2: Drop and recreate tables
-    logger.info("Step 2: Recreating tables with proper JSON schema...")
-    if not drop_and_recreate_tables():
-        logger.error("❌ Migration failed at table recreation")
-        raise Exception("Migration failed at table recreation - check database permissions and constraints")
-    
-    # Step 3: Restore data
-    logger.info("Step 3: Restoring ideas with proper JSON formatting...")
-    restore_ideas(backup_ideas)
-    
-    logger.info("🎉 Migration completed successfully!")
-    logger.info("The ideas table now has proper PostgreSQL JSON columns")
+    try:
+        # Step 1: Backup existing data
+        logger.info("Step 1: Backing up existing ideas...")
+        backup_ideas = backup_existing_ideas()
+        logger.info(f"Backed up {len(backup_ideas)} ideas")
+        
+        # Step 2: Drop and recreate tables
+        logger.info("Step 2: Recreating tables with proper JSON schema...")
+        if not drop_and_recreate_tables():
+            logger.error("❌ Migration failed at table recreation")
+            raise Exception("Migration failed at table recreation - check database permissions and constraints")
+        
+        # Step 3: Restore data
+        logger.info("Step 3: Restoring ideas with proper JSON formatting...")
+        restore_ideas(backup_ideas)
+        
+        logger.info("🎉 Migration completed successfully!")
+        logger.info("The ideas table now has proper PostgreSQL JSON columns")
+        
+        # Step 4: Verify migration success
+        logger.info("Step 4: Verifying migration success...")
+        db = SessionLocal()
+        try:
+            from models import Idea
+            count = db.query(Idea).count()
+            logger.info(f"✅ Migration verification: {count} ideas in database")
+        except Exception as e:
+            logger.error(f"❌ Migration verification failed: {e}")
+            raise
+        finally:
+            db.close()
+            
+    except Exception as e:
+        logger.error(f"💥 Migration failed with error: {e}")
+        logger.error(f"Error type: {type(e).__name__}")
+        raise
 
 if __name__ == "__main__":
     main()

@@ -39,7 +39,7 @@
 
   <!-- Toast notifications -->
   {#if $toasts.length > 0}
-    <div class="fixed top-4 right-4 z-40 space-y-2">
+    <div class="fixed top-4 right-4 z-40 space-y-2 max-w-md">
       {#each $toasts as toast (toast.id)}
         <Toast 
           {toast} 
