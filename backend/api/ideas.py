@@ -1,6 +1,7 @@
 """
 Updated API routes for idea management - New Architecture
 """
+import logging
 from typing import List, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -17,6 +18,7 @@ from schemas import (
 )
 
 router = APIRouter(prefix="/ideas", tags=["ideas"])
+logger = logging.getLogger(__name__)
 
 @router.post("/", response_model=IdeaResponse)
 def create_idea(
