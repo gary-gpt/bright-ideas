@@ -105,15 +105,16 @@ Make each question specific to this idea. Avoid generic questions."""
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": f"You are {persona} helping break down a project into its functional components. Always respond with valid JSON only. Focus on architecture and implementation, not generic project phases."},
+                    {"role": "system", "content": f"You are {persona} creating SPECIFIC, ACTIONABLE implementation steps. Always respond with valid JSON only. Every step must be concrete and executable, like 'pip install X' or 'create this exact function'. NO GENERIC ADVICE."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.5,
+                temperature=0.3,
                 max_tokens=2000
             )
             
             plan_json = response.choices[0].message.content.strip()
-            logger.info(f"Generated plan JSON: {plan_json[:200]}...")
+            logger.info(f"Generated plan for {project_type} project. Response length: {len(plan_json)}")
+            logger.debug(f"Plan JSON preview: {plan_json[:500]}...")
             
             # Parse JSON response
             plan_data = json.loads(plan_json)
@@ -148,9 +149,11 @@ Make each question specific to this idea. Avoid generic questions."""
             
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse LLM plan response: {e}")
+            logger.error(f"Raw response that failed to parse: {plan_json if 'plan_json' in locals() else 'No response received'}")
             return self._get_fallback_plan(title, description)
         except Exception as e:
-            logger.error(f"Failed to generate plan: {e}")
+            logger.error(f"Failed to generate plan for {project_type} project: {e}")
+            logger.error(f"Full error details: {str(e)}")
             return self._get_fallback_plan(title, description)
 
     def _detect_project_type(self, title: str, description: str, answers: Dict[str, str] = None) -> Tuple[str, str]:
@@ -163,9 +166,10 @@ Make each question specific to this idea. Avoid generic questions."""
             combined_text += " " + " ".join(answers.values()).lower()
         
         # Detection patterns for different project types
-        if any(word in combined_text for word in ['api', 'scrape', 'crawl', 'data pipeline', 'etl', 'automation', 'bot', 'script', 'cli']):
+        # Check for technical/scraping tools BEFORE content (since scrapers often mention 'blog' but are tools)
+        if any(word in combined_text for word in ['scrape', 'scraper', 'crawl', 'crawler', 'download', 'extract', 'search internet', 'api', 'data pipeline', 'etl', 'automation', 'bot', 'script', 'cli', 'summarize']):
             return "technical_tool", "a solutions architect"
-        elif any(word in combined_text for word in ['blog', 'content', 'newsletter', 'course', 'book', 'writing', 'publish']):
+        elif any(word in combined_text for word in ['newsletter', 'course', 'book', 'writing', 'publish', 'content creation']):
             return "content_creation", "a content strategist"
         elif any(word in combined_text for word in ['marketplace', 'ecommerce', 'subscription', 'saas', 'platform', 'service']):
             return "business_service", "a business analyst"
@@ -184,12 +188,25 @@ Make each question specific to this idea. Avoid generic questions."""
         """
         # Base context that varies by project type
         context_templates = {
-            "technical_tool": """Break down this project by its technical architecture and data flow:
-- What data sources and ingestion methods are needed?
-- What processing or transformation logic is required?
-- What storage or caching strategy makes sense?
-- What's the simplest MVP that delivers core value?
-- What are the key technical dependencies and risks?""",
+            "technical_tool": """Create a SPECIFIC, ACTIONABLE implementation plan. I want concrete steps I can execute, not vague concepts.
+
+For this exact tool, answer:
+
+1. DATA SOURCES: What EXACT websites/APIs will you scrape? List specific RV blog domains or use a discovery method.
+
+2. SCRAPING APPROACH: Which specific library (BeautifulSoup, Scrapy, Playwright)? What's the exact extraction logic?
+
+3. SUMMARIZATION: Use OpenAI API? Which model? What prompt? Or use extractive summarization (which library)?
+
+4. STORAGE: SQLite? PostgreSQL? JSON files? What's the exact schema?
+
+5. DEDUPLICATION: How exactly will you avoid reprocessing? URL hashing? Content fingerprinting?
+
+6. OUTPUT: CLI with what commands? Web UI? API endpoints? Be specific.
+
+7. MVP SCOPE: What's the absolute minimum that works? Start with 3 specific RV blogs?
+
+Give me steps I can code TODAY, not abstract concepts.""",
             
             "content_creation": """Break down this project by content operations and distribution:
 - What content creation or curation process is needed?
@@ -236,7 +253,7 @@ Make each question specific to this idea. Avoid generic questions."""
         
         breakdown_approach = context_templates.get(project_type, context_templates["general"])
         
-        return f"""You are {persona} creating an implementation breakdown for a specific project.
+        return f"""You are {persona} creating a CONCRETE, ACTIONABLE implementation plan.
 
 Original Idea:
 Title: "{title}"
@@ -245,12 +262,15 @@ Description: "{description}"
 Refinement Details:
 {answers_text}
 
-Create a practical implementation plan that breaks down the project by its functional components and logical layers, NOT by generic project phases.
+IMPORTANT: Give me SPECIFIC, EXECUTABLE steps with actual tool names, library choices, and implementation details.
+DO NOT give me generic advice like "Define requirements" or "Set up infrastructure".
+I want steps like "Install Scrapy with 'pip install scrapy'" or "Create PostgreSQL schema with these exact tables".
 
 {breakdown_approach}
 
-DO NOT structure your response using generic phases like: Research, Planning, Development, Testing, Launch.
-Instead, identify the specific components, systems, or workflows needed for THIS particular idea.
+EVERY step must be something I can DO, not something to THINK ABOUT.
+Bad: "Design the data model"
+Good: "Create PostgreSQL tables: blogs(id, url, title, content, scraped_at), summaries(id, blog_id, summary_text)"
 
 Return ONLY a JSON object in this exact format:
 {{
@@ -283,11 +303,11 @@ Make each step and resource specific to this exact idea. Focus on WHAT needs to 
         # More contextual fallback steps based on project type
         if project_type == "technical_tool":
             steps = [
-                PlanStep(order=1, title="Data Source Integration", description="Define and connect to required data sources", estimated_time="1 week"),
-                PlanStep(order=2, title="Core Processing Logic", description="Build the main data transformation or automation logic", estimated_time="2-3 weeks"),
-                PlanStep(order=3, title="Storage & Output Layer", description="Implement data persistence and output mechanisms", estimated_time="1 week"),
-                PlanStep(order=4, title="Error Handling & Monitoring", description="Add robust error handling and logging", estimated_time="3-4 days"),
-                PlanStep(order=5, title="CLI or API Interface", description="Create user interface for the tool", estimated_time="1 week")
+                PlanStep(order=1, title="Install Scrapy & Setup Project", description="pip install scrapy beautifulsoup4 openai && scrapy startproject rv_scraper", estimated_time="30 minutes"),
+                PlanStep(order=2, title="Build RV Blog Spider", description="Create spider to crawl rvlife.com, loveyourrv.com, and rvwithmill.com - extract title, content, date", estimated_time="2-3 days"),
+                PlanStep(order=3, title="OpenAI Summarization Pipeline", description="Implement GPT-4 API calls with prompt: 'Extract key RV tips and insights from this blog post'", estimated_time="1 day"),
+                PlanStep(order=4, title="SQLite Storage with Deduplication", description="Create blogs table with URL hash index, implement 'seen URLs' check before processing", estimated_time="1 day"),
+                PlanStep(order=5, title="CLI Commands", description="python rv_scraper.py --scrape (fetch new) --summary ID (show summary) --export (JSON dump)", estimated_time="1 day")
             ]
         elif project_type == "content_creation":
             steps = [
