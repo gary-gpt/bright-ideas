@@ -130,6 +130,7 @@
   }
 
   function handleUploadPlan() {
+    console.log('Upload plan button clicked');
     showUploadModal = true;
   }
 
@@ -152,7 +153,7 @@
   <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
     <div class="mb-6">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div class="flex items-center space-x-4">
           <Button variant="ghost" href="/ideas/{ideaId}" size="sm">
             ← Back to Idea
@@ -167,15 +168,15 @@
           </div>
         </div>
         
-        <div class="flex items-center space-x-3">
-          <Button variant="outline" on:click={handleUploadPlan}>
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+          <Button variant="outline" on:click={handleUploadPlan} class="w-full sm:w-auto">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
             </svg>
             Upload Plan
           </Button>
           {#if canCreatePlan}
-            <Button on:click={handleCreatePlan}>
+            <Button on:click={handleCreatePlan} class="w-full sm:w-auto">
               Generate from AI
             </Button>
           {/if}
@@ -191,6 +192,14 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Main Content -->
         <div class="lg:col-span-2">
+          <!-- DEBUG: Temporary visible upload button -->
+          <div class="mb-4 p-4 bg-yellow-100 border border-yellow-300 rounded-lg">
+            <p class="text-sm text-yellow-800 mb-2">🚧 Debug: If you can't see the upload button in the header, use this one:</p>
+            <Button variant="outline" on:click={handleUploadPlan}>
+              📤 Upload Plan (Debug)
+            </Button>
+          </div>
+          
           <PlanList 
             {plans}
             loading={actionLoading}
