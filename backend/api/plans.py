@@ -156,23 +156,6 @@ def get_plan(
     
     return plan
 
-@router.get("/ideas/{idea_id}", response_model=List[PlanResponse])
-def get_idea_plans(
-    idea_id: UUID,
-    db: Session = Depends(get_db)
-):
-    """
-    Get all plans for an idea
-    """
-    idea = db.query(Idea).filter(Idea.id == idea_id).first()
-    if not idea:
-        raise HTTPException(status_code=404, detail="Idea not found")
-    
-    plans = db.query(Plan).filter(
-        Plan.idea_id == idea_id
-    ).order_by(Plan.created_at.desc()).all()
-    
-    return plans
 
 @router.put("/{plan_id}", response_model=PlanResponse)
 def update_plan(

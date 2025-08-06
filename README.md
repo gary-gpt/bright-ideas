@@ -14,15 +14,16 @@ https://bright-ideas-backend.onrender.com
 
 ### 🎯 Capture Mode
 - **Quick Idea Entry**: Simple form to capture rough concepts  
-- **AI-Powered Refinement**: Interactive chat to clarify and improve ideas
-- **Smart Questions**: AI asks targeted questions to uncover key details
-- **Automatic Categorization**: Tags and status tracking
+- **AI-Powered Refinement**: Structured Q&A sessions to clarify ideas
+- **Smart Questions**: AI generates 3-7 targeted questions based on your idea
+- **Progress Tracking**: Visual indicators show Q&A completion progress
 
 ### 🏗️ Build Mode  
-- **Structured Planning**: Break ideas into components and phases
-- **AI Collaboration**: Chat with AI to explore implementation details
-- **Export Options**: Generate markdown and JSON project files
-- **Progress Tracking**: Monitor idea development from concept to completion
+- **AI-Generated Plans**: Transform refined ideas into structured implementation plans
+- **Step-by-Step Guidance**: Detailed steps with time estimates and descriptions
+- **Resource Recommendations**: Curated tools, articles, and services for each plan
+- **Multiple Export Formats**: Download plans as Markdown or JSON files
+- **Plan Management**: Multiple plans per idea with activation system
 
 ### 📱 Cross-Device Design
 - **Mobile-First**: Optimized for phones, tablets, and desktop
@@ -201,10 +202,11 @@ With the backend running, visit:
 - **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
 ### Key Endpoints
-- `POST /api/v1/ideas` - Create new idea
-- `POST /api/v1/conversations/refine/{idea_id}` - Start AI refinement
-- `POST /api/v1/planning` - Generate build plan
-- `GET /api/v1/planning/{plan_id}/export/markdown` - Export plan
+- `POST /api/v1/ideas/` - Create new idea
+- `POST /api/v1/refinement/sessions/` - Start structured Q&A refinement
+- `POST /api/v1/plans/generate/` - Generate implementation plan
+- `GET /api/v1/plans/{plan_id}/export/markdown` - Export plan as Markdown
+- `GET /api/v1/plans/{plan_id}/export/json` - Export plan as JSON
 
 ## 🤝 Contributing
 
@@ -220,6 +222,30 @@ With the backend running, visit:
 - **Add tests** for new functionality
 - **Update documentation** as needed
 - **Test on mobile** and desktop
+
+## 🔍 Code Quality
+
+This project maintains high code quality standards with regular audits and automated checks.
+
+### Recent Audit Results (Aug 2025)
+- **Overall Grade: B+** - Solid foundation with specific improvement areas
+- **Critical Issues: 3** - All identified with clear fixes
+- **Security Score: Good** - Proper environment variable usage, no hardcoded secrets
+- **Architecture: Excellent** - Clean separation of concerns, good patterns
+
+### Known Issues & Fixes
+- **Duplicate function definition** in `backend/api/plans.py` (⚠️ Breaking - needs immediate fix)
+- **Development console.log statements** throughout frontend (25+ instances)
+- **Missing timeout configuration** for OpenAI API calls
+
+### Quality Commands
+```bash
+make lint           # Check code style and common issues
+make test           # Run comprehensive test suite  
+make audit          # Security and quality analysis
+```
+
+See `CODE_QUALITY_AUDIT_REPORT.md` for detailed findings and recommendations.
 
 ## 📝 License
 

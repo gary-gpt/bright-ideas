@@ -53,13 +53,17 @@ def reset_database():
 # Database health check
 def check_database_connection():
     """Check if database connection is working."""
+    db = None
     try:
         from sqlalchemy import text
         db = SessionLocal()
         # Simple query to test connection
         db.execute(text("SELECT 1"))
-        db.close()
         return True
     except Exception as e:
         print(f"Database connection failed: {e}")
         return False
+    finally:
+        # Ensure connection is always closed, even if query fails
+        if db is not None:
+            db.close()

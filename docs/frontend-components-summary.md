@@ -51,26 +51,37 @@ The frontend components are organized into a hierarchical structure with shared 
 - ✅ Brand header
 - ✅ Backdrop for mobile
 
-### 2. Capture Mode Components (`src/lib/components/capture/`)
+### 2. Feature-Specific Components
 
-#### IdeaCapture Component (`IdeaCapture.svelte`)
-**Features:**
-- ✅ Form validation
-- ✅ Character counters
-- ✅ Tag management
-- ✅ Tips and guidance
-- ✅ Loading states
-- ✅ Responsive design
+#### Capture Components (`src/lib/components/capture/`)
+**IdeaCapture Component (`IdeaCapture.svelte`):**
+- ✅ Form validation with TypeScript interfaces
+- ✅ Character counters for title and description
+- ✅ Dynamic tag management with add/remove
+- ✅ Tips and guidance for better ideas
+- ✅ Loading states during submission
+- ✅ Responsive design with mobile optimization
 
-#### IdeaRefinement Component (`IdeaRefinement.svelte`)
-**Features:**
-- ✅ Chat interface
-- ✅ Message bubbles (user/assistant)
-- ✅ Typing indicators
-- ✅ Suggested questions
-- ✅ Timestamp display
-- ✅ Auto-scroll behavior
-- ✅ Keyboard shortcuts
+#### Refinement Components (`src/lib/components/refinement/`)
+**ProgressIndicator Component (`ProgressIndicator.svelte`):**
+- ✅ Visual progress tracking for Q&A completion
+- ✅ Dynamic progress bar with percentage
+- ✅ Question count display
+- ✅ Smooth animations
+
+#### Plans Components (`src/lib/components/plans/`)
+**PlanList Component (`PlanList.svelte`):**
+- ✅ List display of all plans for an idea
+- ✅ Plan status indicators with color coding
+- ✅ Plan activation controls
+- ✅ Plan selection and navigation
+
+**PlanViewer Component (`PlanViewer.svelte`):**
+- ✅ Comprehensive plan display with steps and resources
+- ✅ Export functionality (JSON/Markdown)
+- ✅ Resource links with external indicators
+- ✅ Time estimates for implementation steps
+- ✅ Status badge display
 
 ## Page Structure
 
@@ -92,19 +103,38 @@ The frontend components are organized into a hierarchical structure with shared 
 - ✅ Empty states
 - ✅ Loading states
 
-### 3. Capture Flow (`src/routes/capture/`)
-**Pages:**
-- ✅ Initial capture form (`+page.svelte`)
-- ✅ Refinement chat (`refine/[id]/+page.svelte`)
+### 3. Application Routes
+**Capture Flow (`src/routes/capture/`):**
+- ✅ Initial idea capture form (`+page.svelte`)
 
-### 4. Ideas Library (`src/routes/ideas/+page.svelte`)
+**Ideas Management (`src/routes/ideas/`):**
+- ✅ Ideas library with search/filter (`+page.svelte`)
+- ✅ Individual idea details (`[id]/+page.svelte`)
+- ✅ Structured refinement Q&A (`[id]/refine/+page.svelte`)
+- ✅ Plan management (`[id]/plans/+page.svelte`)
+- ✅ Plan viewer (`[id]/plans/[planId]/+page.svelte`)
+- ✅ Archived ideas (`archive/+page.svelte`)
+
+**Settings:**
+- ✅ Application settings (`settings/+page.svelte`)
+
+## Store Integration Patterns
+
+### State Management (`src/lib/stores/ideas.ts`)
 **Features:**
-- ✅ Search and filtering
-- ✅ Grid/list view toggle
-- ✅ Tag filtering
-- ✅ Status filtering
-- ✅ Pagination support
-- ✅ Empty states
+- ✅ Comprehensive CRUD operations for ideas, refinement sessions, and plans
+- ✅ Derived stores for filtered data and computed values  
+- ✅ Reactive progress tracking for refinement sessions
+- ✅ Error handling with toast notifications
+- ✅ Loading state management across operations
+
+### UI State Management (`src/lib/stores/ui.ts`)
+**Features:**
+- ✅ Toast notification system with auto-dismiss
+- ✅ Modal management with keyboard support
+- ✅ Global loading states and overlays
+- ✅ Mobile detection and responsive behaviors
+- ✅ Navigation state management
 
 ## Component Design Patterns
 
@@ -361,13 +391,37 @@ test('calls onClick when clicked', async () => {
 });
 ```
 
+## Code Quality Issues Found
+
+### Development Artifacts
+⚠️ **25+ console.log statements** found across components and stores
+⚠️ **Memory leaks** from uncleaned event listeners in `ui.ts:180-205`
+⚠️ **Race conditions** possible in concurrent async store operations
+
+### Improvement Opportunities
+- **Repeated Loading Patterns**: 8+ route components use identical async loading boilerplate
+- **Error Handling**: Some unhandled promise rejections in store operations
+- **Event Cleanup**: Window event listeners not properly removed in SPA context
+
+## Recommendations
+
+### High Priority
+- Remove development console.log statements before production
+- Implement proper event listener cleanup in component lifecycle
+- Add comprehensive error boundaries for async operations
+
+### Medium Priority
+- Create reusable async loading hooks to reduce boilerplate
+- Implement consistent error propagation patterns
+- Add timeout handling for long-running operations
+
 ## Verdict
-✅ **EXCELLENT** - Well-structured, accessible, and performant component architecture
+✅ **VERY GOOD** - Well-architected components with specific cleanup needs
 
 ## Strengths
-- ✅ Consistent design patterns
-- ✅ TypeScript throughout
-- ✅ Accessibility focused
-- ✅ Mobile optimized
-- ✅ Performance conscious
-- ✅ Testing ready
+- ✅ Excellent TypeScript integration throughout
+- ✅ Comprehensive store architecture with reactive patterns
+- ✅ Mobile-first responsive design
+- ✅ Good accessibility practices
+- ✅ Consistent component patterns and prop validation
+- ✅ Clean separation of concerns between UI and data layers

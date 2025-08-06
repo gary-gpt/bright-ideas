@@ -18,7 +18,10 @@ logger = logging.getLogger(__name__)
 
 class AIService:
     def __init__(self):
-        self.client = OpenAI(api_key=settings.openai_api_key)
+        self.client = OpenAI(
+            api_key=settings.openai_api_key,
+            timeout=settings.openai_timeout
+        )
         self.model = settings.openai_model
 
     async def generate_refinement_questions(self, title: str, description: str) -> List[RefinementQuestion]:

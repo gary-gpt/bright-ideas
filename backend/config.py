@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     # OpenAI settings
     openai_api_key: str
     openai_model: str = "gpt-4o"
+    openai_timeout: float = 30.0  # Timeout in seconds for OpenAI API calls
     
     # Application settings
     environment: str = "development"  
