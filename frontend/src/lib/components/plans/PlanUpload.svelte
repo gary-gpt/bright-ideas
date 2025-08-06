@@ -3,7 +3,7 @@
   import { api } from '$lib/services/api';
   import Button from '$lib/components/shared/Button.svelte';
   import Modal from '$lib/components/shared/Modal.svelte';
-  import { addToast } from '$lib/stores/ui';
+  import { toastActions } from '$lib/stores/ui';
   import type { Plan } from '$lib/types';
 
   export let ideaId: string;
@@ -91,7 +91,7 @@
 
   async function handleUpload() {
     if (!content.trim()) {
-      addToast('Please enter plan content', 'error');
+      toastActions.error('Please enter plan content');
       return;
     }
 
@@ -103,12 +103,12 @@
         title: title.trim() || undefined
       });
 
-      addToast('Plan uploaded successfully!', 'success');
+      toastActions.success('Plan uploaded successfully!');
       dispatch('uploaded', uploadedPlan);
       handleClose();
     } catch (error) {
       console.error('Upload failed:', error);
-      addToast('Failed to upload plan. Please try again.', 'error');
+      toastActions.error('Failed to upload plan. Please try again.');
     } finally {
       uploading = false;
     }
