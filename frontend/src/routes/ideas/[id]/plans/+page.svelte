@@ -130,8 +130,9 @@
   }
 
   function handleUploadPlan() {
-    console.log('Upload plan button clicked');
+    console.log('Upload plan button clicked, current showUploadModal:', showUploadModal);
     showUploadModal = true;
+    console.log('After setting showUploadModal to true:', showUploadModal);
   }
 
   async function handlePlanUploaded(event: CustomEvent<Plan>) {

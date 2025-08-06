@@ -9,6 +9,11 @@
   export let ideaId: string;
   export let show = false;
 
+  // Debug logging
+  $: {
+    console.log('PlanUpload show value changed:', show);
+  }
+
   const dispatch = createEventDispatcher<{
     uploaded: Plan;
     close: void;
@@ -148,7 +153,7 @@ This is a tool to scrape and summarize RV blog content for research purposes.
   }
 </script>
 
-<Modal bind:show={show} title="Upload Implementation Plan" size="large" on:close={handleClose}>
+<Modal bind:isOpen={show} title="Upload Implementation Plan" size="large" on:close={handleClose}>
   <div class="space-y-6">
     <!-- Title input -->
     <div>
