@@ -260,6 +260,13 @@ class ApiClient {
     });
   }
 
+  async uploadPlan(upload: { idea_id: string; content: string; title?: string }): Promise<Plan> {
+    return this.request<Plan>('/plans/upload/', {
+      method: 'POST',
+      body: JSON.stringify(upload),
+    });
+  }
+
   // Export methods
   async exportPlanAsJson(planId: string): Promise<Blob> {
     return this.downloadFile(`/plans/${planId}/export/json`, `plan_${planId}.json`);

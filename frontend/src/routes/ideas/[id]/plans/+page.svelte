@@ -14,6 +14,7 @@
   import Button from '$lib/components/shared/Button.svelte';
   import LoadingSpinner from '$lib/components/shared/LoadingSpinner.svelte';
   import PlanList from '$lib/components/plans/PlanList.svelte';
+  import PlanUpload from '$lib/components/plans/PlanUpload.svelte';
   import type { IdeaDetail, Plan, RefinementSession } from '$lib/types';
 
   let idea: IdeaDetail | null = null;
@@ -21,6 +22,7 @@
   let sessions: RefinementSession[] = [];
   let loading = true;
   let actionLoading = false;
+  let showUploadModal = false;
 
   $: ideaId = $page.params.id;
   $: completedSessions = sessions.filter(s => s.is_complete);
@@ -126,6 +128,20 @@
   function startRefinement() {
     goto(`/ideas/${ideaId}/refine`);
   }
+
+  function handleUploadPlan() {
+    showUploadModal = true;
+  }
+
+  async function handlePlanUploaded(event: CustomEvent<Plan>) {
+    const uploadedPlan = event.detail;
+    
+    // Add to local plans array
+    plans = [uploadedPlan, ...plans];
+    
+    toastActions.success('Plan uploaded successfully!');
+    showUploadModal = false;
+  }
 </script>
 
 <svelte:head>
@@ -149,6 +165,20 @@
               <p class="text-secondary-600">{idea.title}</p>
             {/if}
           </div>
+        </div>
+        
+        <div class="flex items-center space-x-3">
+          <Button variant="outline" on:click={handleUploadPlan}>
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+            </svg>
+            Upload Plan
+          </Button>
+          {#if canCreatePlan}
+            <Button on:click={handleCreatePlan}>
+              Generate from AI
+            </Button>
+          {/if}
         </div>
       </div>
     </div>
@@ -237,6 +267,9 @@
                 <Button size="sm" variant="outline" on:click={startRefinement} class="w-full">
                   Start New Session
                 </Button>
+                <Button size="sm" variant="outline" on:click={handleUploadPlan} class="w-full">
+                  Upload Plan
+                </Button>
                 {#if completedSessions.length > 0}
                   <Button size="sm" on:click={handleCreatePlan} class="w-full">
                     Generate New Plan
@@ -296,3 +329,13 @@
     {/if}
   </div>
 </div>
+
+<!-- Upload Modal -->
+{#if idea}
+  <PlanUpload 
+    ideaId={idea.id}
+    bind:show={showUploadModal}
+    on:uploaded={handlePlanUploaded}
+    on:close={() => showUploadModal = false}
+  />
+{/if}

@@ -117,6 +117,12 @@ class PlanUpdate(BaseModel):
     resources: Optional[List[PlanResource]] = None
     status: Optional[str] = Field(None, pattern="^(draft|generated|edited|published)$")
 
+class PlanUpload(BaseModel):
+    """Schema for uploading a full plan via text/markdown"""
+    idea_id: UUID
+    content: str = Field(..., min_length=10, description="Full plan content in markdown or text format")
+    title: Optional[str] = Field(None, description="Optional title for the uploaded plan")
+
 class PlanResponse(BaseModel):
     """Schema for plan responses"""
     id: UUID

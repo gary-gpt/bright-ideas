@@ -13,11 +13,13 @@ from models import Idea, RefinementSession, Plan, IdeaStatus, PlanStatus
 from schemas import (
     PlanCreate,
     PlanUpdate,
+    PlanUpload,
     PlanResponse,
     PlanExportResponse,
     PlanGenerationResponse
 )
 from services.ai_service import AIService
+from services.plan_parser import parse_markdown_plan
 
 router = APIRouter(prefix="/plans", tags=["plans"])
 ai_service = AIService()
@@ -139,6 +141,97 @@ async def generate_plan(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to generate plan: {str(e)}"
+        )
+
+@router.post("/upload/", response_model=PlanResponse)
+def upload_plan(
+    plan_upload: PlanUpload,
+    db: Session = Depends(get_db)
+):
+    """
+    Upload a full implementation plan via markdown/text content
+    """
+    # Verify idea exists
+    idea = db.query(Idea).filter(Idea.id == plan_upload.idea_id).first()
+    if not idea:
+        raise HTTPException(status_code=404, detail="Idea not found")
+    
+    try:
+        # Parse the uploaded content
+        parsed_plan = parse_markdown_plan(plan_upload.content)
+        
+        # Convert parsed steps to JSON format
+        steps_json = [
+            {
+                "order": step.order,
+                "title": step.title,
+                "description": step.description,
+                "estimated_time": step.estimated_time
+            }
+            for step in parsed_plan["steps"]
+        ]
+        
+        # Convert parsed resources to JSON format
+        resources_json = [
+            {
+                "title": resource.title,
+                "url": resource.url,
+                "type": resource.type,
+                "description": resource.description
+            }
+            for resource in parsed_plan["resources"]
+        ]
+        
+        # Generate markdown content from the original upload
+        markdown_content = f"# {plan_upload.title or idea.title} - Implementation Plan\n\n"
+        markdown_content += f"## Summary\n{parsed_plan['summary']}\n\n"
+        markdown_content += "## Steps\n\n"
+        
+        for step in parsed_plan["steps"]:
+            markdown_content += f"### {step.order}. {step.title}\n"
+            markdown_content += f"{step.description}\n"
+            if step.estimated_time:
+                markdown_content += f"**Estimated Time:** {step.estimated_time}\n"
+            markdown_content += "\n"
+        
+        if parsed_plan["resources"]:
+            markdown_content += "## Resources\n\n"
+            for resource in parsed_plan["resources"]:
+                markdown_content += f"- **{resource.title}**"
+                if resource.url:
+                    markdown_content += f" ([Link]({resource.url}))"
+                if resource.description:
+                    markdown_content += f" - {resource.description}"
+                markdown_content += "\n"
+        
+        # Create plan
+        plan = Plan(
+            idea_id=plan_upload.idea_id,
+            refinement_session_id=None,  # Not linked to a refinement session
+            summary=parsed_plan["summary"],
+            steps=steps_json,
+            resources=resources_json,
+            status=PlanStatus.edited,  # Mark as edited since it's user-uploaded
+            content_markdown=markdown_content,
+            is_active=False  # Not active by default
+        )
+        
+        db.add(plan)
+        
+        # Update idea status to planned if not already
+        if idea.status != IdeaStatus.planned:
+            idea.status = IdeaStatus.planned
+        
+        db.commit()
+        db.refresh(plan)
+        
+        return plan
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to upload plan: {str(e)}"
         )
 
 @router.get("/{plan_id}", response_model=PlanResponse)
