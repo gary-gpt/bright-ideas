@@ -59,16 +59,46 @@ def create_idea(
         # Ensure tags is stored as proper Python list, not JSON string
         logger.info(f"Creating idea with tags as: {tags} (Python list)")
         
-        db_idea = Idea(
-            title=idea.title.strip(),
-            original_description=idea.original_description.strip(),
-            tags=tags,  # Pass as Python list - SQLAlchemy will handle JSON conversion
-            status=IdeaStatus.captured
-        )
-        
-        db.add(db_idea)
-        db.commit()
-        db.refresh(db_idea)
+        # Try creating with is_unrefined field first, fall back to without it
+        try:
+            db_idea = Idea(
+                title=idea.title.strip(),
+                original_description=idea.original_description.strip(),
+                tags=tags,  # Pass as Python list - SQLAlchemy will handle JSON conversion
+                status=IdeaStatus.captured,
+                is_unrefined=getattr(idea, 'is_unrefined', False)
+            )
+            
+            db.add(db_idea)
+            db.commit()
+            db.refresh(db_idea)
+            
+        except Exception as column_error:
+            logger.warning(f"Failed to create idea with is_unrefined field: {column_error}")
+            logger.info("Attempting to create idea without is_unrefined field")
+            db.rollback()
+            
+            # Create idea using raw SQL to avoid is_unrefined column
+            from sqlalchemy import text
+            import uuid
+            idea_id = uuid.uuid4()
+            
+            db.execute(text("""
+                INSERT INTO ideas (id, title, original_description, tags, status, created_at, updated_at)
+                VALUES (:id, :title, :description, :tags, :status, :created_at, :updated_at)
+            """), {
+                'id': idea_id,
+                'title': idea.title.strip(),
+                'description': idea.original_description.strip(),
+                'tags': tags,
+                'status': 'captured',
+                'created_at': db.execute(text("SELECT CURRENT_TIMESTAMP")).scalar(),
+                'updated_at': db.execute(text("SELECT CURRENT_TIMESTAMP")).scalar()
+            })
+            db.commit()
+            
+            # Fetch the created idea
+            db_idea = db.query(Idea).filter(Idea.id == idea_id).first()
         
         logger.info(f"Successfully created idea with ID: {db_idea.id}")
         
@@ -79,6 +109,7 @@ def create_idea(
             original_description=db_idea.original_description,
             tags=db_idea.tags,
             status=db_idea.status.value,
+            is_unrefined=getattr(db_idea, 'is_unrefined', False),  # Safe access with default
             created_at=db_idea.created_at,
             updated_at=db_idea.updated_at,
             refinement_sessions_count=0,
