@@ -105,75 +105,94 @@ def get_ideas(
     """
     Get ideas with optional filtering and related data counts
     """
-    query = db.query(Idea)
-    
-    # Apply filters
-    if search:
-        search_term = f"%{search}%"
-        query = query.filter(
-            (Idea.title.ilike(search_term)) |
-            (Idea.original_description.ilike(search_term))
-        )
-    
-    if tags:
-        # Filter by tags (JSON array contains any of the specified tags)
-        for tag in tags:
-            query = query.filter(func.json_array_length(Idea.tags.op('?')(tag)) > 0)
-    
-    if status:
-        try:
-            status_enum = IdeaStatus(status)
-            query = query.filter(Idea.status == status_enum)
-        except ValueError:
-            raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
-    
-    # Order by most recent first
-    query = query.order_by(Idea.updated_at.desc())
-    
-    # Apply pagination
-    ideas = query.offset(skip).limit(limit).all()
-    
-    # Build response with computed fields (simplified for initial deployment)
-    response_ideas = []
-    for idea in ideas:
-        # For now, return zero counts until the new tables are properly set up
-        response_ideas.append(IdeaResponse(
-            id=idea.id,
-            title=idea.title,
-            original_description=idea.original_description,
-            tags=idea.tags,
-            status=idea.status.value,
-            created_at=idea.created_at,
-            updated_at=idea.updated_at,
-            refinement_sessions_count=0,
-            plans_count=0,
-            has_active_plan=False
-        ))
-    
-    return response_ideas
+    try:
+        query = db.query(Idea)
+        
+        # Apply filters
+        if search:
+            search_term = f"%{search}%"
+            query = query.filter(
+                (Idea.title.ilike(search_term)) |
+                (Idea.original_description.ilike(search_term))
+            )
+        
+        if tags:
+            # Filter by tags (JSON array contains any of the specified tags)
+            for tag in tags:
+                query = query.filter(func.json_array_length(Idea.tags.op('?')(tag)) > 0)
+        
+        if status:
+            try:
+                status_enum = IdeaStatus(status)
+                query = query.filter(Idea.status == status_enum)
+            except ValueError:
+                raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
+        
+        # Order by most recent first
+        query = query.order_by(Idea.updated_at.desc())
+        
+        # Apply pagination
+        ideas = query.offset(skip).limit(limit).all()
+        
+        # Build response with computed fields (simplified for initial deployment)
+        response_ideas = []
+        for idea in ideas:
+            # For now, return zero counts until the new tables are properly set up
+            response_ideas.append(IdeaResponse(
+                id=idea.id,
+                title=idea.title,
+                original_description=idea.original_description,
+                tags=idea.tags,
+                status=idea.status.value,
+                is_unrefined=getattr(idea, 'is_unrefined', False),  # Safe access with default
+                created_at=idea.created_at,
+                updated_at=idea.updated_at,
+                refinement_sessions_count=0,
+                plans_count=0,
+                has_active_plan=False
+            ))
+        
+        return response_ideas
+        
+    except Exception as e:
+        logger.error(f"Error getting ideas: {e}")
+        # Return empty list if database queries fail
+        return []
 
 @router.get("/stats")
 def get_idea_stats(db: Session = Depends(get_db)):
     """
     Get statistics about ideas (simplified for initial deployment)
     """
-    total_ideas = db.query(Idea).count()
-    
-    # Count by status
-    status_counts = {}
-    for status in IdeaStatus:
-        count = db.query(Idea).filter(Idea.status == status).count()
-        status_counts[status.value] = count
-    
-    # Simplified stats until all tables are set up
-    return {
-        "total_ideas": total_ideas,
-        "status_counts": status_counts,
-        "ideas_with_plans": 0,
-        "total_refinement_sessions": 0,
-        "completed_refinement_sessions": 0,
-        "average_sessions_per_idea": 0.0
-    }
+    try:
+        total_ideas = db.query(Idea).count()
+        
+        # Count by status
+        status_counts = {}
+        for status in IdeaStatus:
+            count = db.query(Idea).filter(Idea.status == status).count()
+            status_counts[status.value] = count
+        
+        # Simplified stats until all tables are set up
+        return {
+            "total_ideas": total_ideas,
+            "status_counts": status_counts,
+            "ideas_with_plans": 0,
+            "total_refinement_sessions": 0,
+            "completed_refinement_sessions": 0,
+            "average_sessions_per_idea": 0.0
+        }
+    except Exception as e:
+        logger.error(f"Error getting idea stats: {e}")
+        # Return safe defaults if database queries fail
+        return {
+            "total_ideas": 0,
+            "status_counts": {"captured": 0, "refining": 0, "planned": 0, "archived": 0},
+            "ideas_with_plans": 0,
+            "total_refinement_sessions": 0,
+            "completed_refinement_sessions": 0,
+            "average_sessions_per_idea": 0.0
+        }
 
 @router.get("/recent", response_model=List[IdeaResponse])
 def get_recent_ideas(
@@ -183,10 +202,34 @@ def get_recent_ideas(
     """
     Get recently updated ideas with simplified response
     """
-    # Get ideas with basic info
-    ideas = db.query(Idea).order_by(
-        Idea.updated_at.desc()
-    ).limit(limit).all()
+    # Get ideas with basic info - handle missing is_unrefined column gracefully
+    try:
+        ideas = db.query(Idea).order_by(
+            Idea.updated_at.desc()
+        ).limit(limit).all()
+    except Exception as e:
+        logger.error(f"Error querying ideas: {e}")
+        # Try querying without is_unrefined column if it doesn't exist
+        from sqlalchemy import text
+        result = db.execute(text("""
+            SELECT id, title, original_description, tags, status, created_at, updated_at
+            FROM ideas 
+            ORDER BY updated_at DESC 
+            LIMIT :limit
+        """), {"limit": limit})
+        
+        ideas = []
+        for row in result:
+            idea = Idea()
+            idea.id = row[0]
+            idea.title = row[1] 
+            idea.original_description = row[2]
+            idea.tags = row[3] or []
+            idea.status = row[4]
+            idea.is_unrefined = False  # Default value
+            idea.created_at = row[5]
+            idea.updated_at = row[6]
+            ideas.append(idea)
     
     response_ideas = []
     for idea in ideas:
@@ -198,6 +241,7 @@ def get_recent_ideas(
             original_description=idea.original_description,
             tags=idea.tags,
             status=idea.status.value,
+            is_unrefined=getattr(idea, 'is_unrefined', False),  # Safe access with default
             created_at=idea.created_at,
             updated_at=idea.updated_at,
             refinement_sessions_count=0,

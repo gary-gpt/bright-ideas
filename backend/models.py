@@ -33,7 +33,7 @@ class Idea(Base):
     original_description = Column(Text, nullable=False)
     tags = Column(ARRAY(String), nullable=False, default=list)  # ["productivity", "ai", "tool"]
     status = Column(Enum(IdeaStatus), default=IdeaStatus.captured)
-    is_unrefined = Column(Boolean, default=False)  # True if added without going through refinement
+    is_unrefined = Column(Boolean, default=False, nullable=True)  # True if added without going through refinement
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)

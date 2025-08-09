@@ -31,7 +31,7 @@ def apply_manual_migrations():
                 logger.info("Creating todos table")
                 conn.execute(text("""
                     CREATE TABLE todos (
-                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        id UUID PRIMARY KEY,
                         text TEXT NOT NULL,
                         is_completed BOOLEAN DEFAULT FALSE,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
