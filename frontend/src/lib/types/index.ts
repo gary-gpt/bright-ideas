@@ -30,7 +30,7 @@ export interface Idea {
   original_description: string;
   tags: string[];
   status: 'captured' | 'refining' | 'planned' | 'archived';
-  is_unrefined: boolean;
+  is_unrefined?: boolean; // Optional for backward compatibility
   created_at: string;
   updated_at: string;
   

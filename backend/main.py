@@ -42,8 +42,16 @@ async def lifespan(app: FastAPI):
         # Also ensure all tables exist
         create_tables()
         
+        # Apply manual migrations for new fields
+        try:
+            from manual_migration import apply_manual_migrations
+            apply_manual_migrations()
+            logger.info("✅ Manual migrations applied successfully")
+        except Exception as migration_error:
+            logger.warning(f"Manual migration failed, continuing: {migration_error}")
+        
         logger.info("✅ Database tables created/fixed successfully")
-        logger.info("Tables include: ideas, refinement_sessions, plans")
+        logger.info("Tables include: ideas, refinement_sessions, plans, todos")
         logger.info("JSON schema fix applied for PostgreSQL compatibility")
     except SystemExit:
         # Handle sys.exit(1) from migration script more gracefully

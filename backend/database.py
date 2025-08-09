@@ -7,7 +7,7 @@ from typing import Generator
 from config import settings
 
 # Import all models to ensure they're registered
-from models import Base, Idea, RefinementSession, Plan
+from models import Base, Idea, RefinementSession, Plan, Todo
 
 # Create database engine
 engine = create_engine(

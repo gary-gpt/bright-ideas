@@ -68,7 +68,7 @@ class IdeaResponse(BaseModel):
     original_description: str
     tags: List[str]
     status: str
-    is_unrefined: bool
+    is_unrefined: bool = False  # Default to False for backward compatibility
     created_at: datetime
     updated_at: datetime
     
