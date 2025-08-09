@@ -7,9 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from ..database import get_db
-from ..models import Todo
-from ..schemas import TodoCreate, TodoUpdate, TodoResponse
+from database import get_db
+from models import Todo
+from schemas import TodoCreate, TodoUpdate, TodoResponse
 
 router = APIRouter(prefix="/todos", tags=["todos"])
 

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { todos, todosLoading, todosError, todoActions } from '$lib/stores/todos';
-  import { addToast } from '$lib/stores/ui';
+  import { toastActions } from '$lib/stores/ui';
   import LoadingSpinner from '$lib/components/shared/LoadingSpinner.svelte';
   import Button from '$lib/components/shared/Button.svelte';
   import { Plus, Check, X } from 'lucide-svelte';
@@ -20,15 +20,9 @@
     try {
       await todoActions.create(newTodoText);
       newTodoText = '';
-      addToast({
-        type: 'success',
-        message: 'Todo added successfully'
-      });
+      toastActions.success('Todo added successfully');
     } catch (error) {
-      addToast({
-        type: 'error',
-        message: 'Failed to add todo'
-      });
+      toastActions.error('Failed to add todo');
     } finally {
       isAddingTodo = false;
     }
@@ -37,30 +31,18 @@
   async function handleCompleteTodo(todoId: string) {
     try {
       await todoActions.complete(todoId);
-      addToast({
-        type: 'success',
-        message: 'Todo completed and removed'
-      });
+      toastActions.success('Todo completed and removed');
     } catch (error) {
-      addToast({
-        type: 'error',
-        message: 'Failed to complete todo'
-      });
+      toastActions.error('Failed to complete todo');
     }
   }
 
   async function handleDeleteTodo(todoId: string) {
     try {
       await todoActions.delete(todoId);
-      addToast({
-        type: 'success',
-        message: 'Todo deleted'
-      });
+      toastActions.success('Todo deleted');
     } catch (error) {
-      addToast({
-        type: 'error',
-        message: 'Failed to delete todo'
-      });
+      toastActions.error('Failed to delete todo');
     }
   }
 
