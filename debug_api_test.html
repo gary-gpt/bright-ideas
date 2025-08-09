@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug API Test</title>
+</head>
+<body>
+    <h1>Bright Ideas API Debug Test</h1>
+    <button onclick="testHealthCheck()">Test Health Check</button>
+    <button onclick="testCreateIdea()">Test Create Idea</button>
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'https://bright-ideas-backend.onrender.com/api/v1';
+        
+        async function testHealthCheck() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                document.getElementById('results').innerHTML = `<h3>Health Check:</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                document.getElementById('results').innerHTML = `<h3>Health Check Error:</h3><pre>${error.message}</pre>`;
+            }
+        }
+        
+        async function testCreateIdea() {
+            try {
+                const testIdea = {
+                    title: "Test API Idea",
+                    original_description: "This is a test idea to debug API creation issues",
+                    tags: ["test", "debug"]
+                };
+                
+                const response = await fetch(`${API_BASE}/ideas/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testIdea)
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                document.getElementById('results').innerHTML = `<h3>Create Idea Success:</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                document.getElementById('results').innerHTML = `<h3>Create Idea Error:</h3><pre>${error.message}</pre>`;
+            }
+        }
+    </script>
+</body>
+</html>

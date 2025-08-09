@@ -6,12 +6,31 @@
 // CORE DATA TYPES (matching backend)
 // ====================================
 
+// Todo Types
+export interface Todo {
+  id: string;
+  text: string;
+  is_completed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TodoCreate {
+  text: string;
+}
+
+export interface TodoUpdate {
+  text?: string;
+  is_completed?: boolean;
+}
+
 export interface Idea {
   id: string;
   title: string;
   original_description: string;
   tags: string[];
   status: 'captured' | 'refining' | 'planned' | 'archived';
+  is_unrefined: boolean;
   created_at: string;
   updated_at: string;
   
@@ -30,6 +49,7 @@ export interface IdeaCreate {
   title: string;
   original_description: string;
   tags: string[];
+  is_unrefined?: boolean;
 }
 
 export interface IdeaUpdate {
@@ -37,6 +57,7 @@ export interface IdeaUpdate {
   original_description?: string;
   tags?: string[];
   status?: 'captured' | 'refining' | 'planned' | 'archived';
+  is_unrefined?: boolean;
 }
 
 // ====================================

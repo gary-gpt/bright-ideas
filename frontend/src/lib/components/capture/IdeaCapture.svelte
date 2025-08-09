@@ -9,7 +9,10 @@
 
   export let loading = false;
 
-  const dispatch = createEventDispatcher<{ submit: IdeaCaptureForm }>();
+  const dispatch = createEventDispatcher<{ 
+    submit: IdeaCaptureForm;
+    quickSubmit: IdeaCaptureForm;
+  }>();
 
   let form: IdeaCaptureForm = {
     title: '',
@@ -22,6 +25,12 @@
   function handleSubmit() {
     if (form.title.trim() && form.description.trim()) {
       dispatch('submit', form);
+    }
+  }
+
+  function handleQuickSubmit() {
+    if (form.title.trim() && form.description.trim()) {
+      dispatch('quickSubmit', form);
     }
   }
 
@@ -141,8 +150,17 @@
         </p>
       </div>
 
-      <!-- Submit Button -->
-      <div class="flex justify-end">
+      <!-- Submit Buttons -->
+      <div class="flex justify-between items-center">
+        <Button
+          type="button"
+          variant="outline"
+          on:click={handleQuickSubmit}
+          disabled={!isValid || loading}
+          size="lg"
+        >
+          Save for Later
+        </Button>
         <Button
           type="submit"
           {loading}

@@ -33,6 +33,7 @@ class Idea(Base):
     original_description = Column(Text, nullable=False)
     tags = Column(ARRAY(String), nullable=False, default=list)  # ["productivity", "ai", "tool"]
     status = Column(Enum(IdeaStatus), default=IdeaStatus.captured)
+    is_unrefined = Column(Boolean, default=False)  # True if added without going through refinement
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -95,6 +96,16 @@ class RefinementSession(Base):
         """Mark this session as complete"""
         self.is_complete = True
         self.completed_at = datetime.utcnow()
+
+class Todo(Base):
+    """Simple todo item with checkbox functionality"""
+    __tablename__ = "todos"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    text = Column(Text, nullable=False)
+    is_completed = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class Plan(Base):
     """Generated implementation plan based on refined idea"""

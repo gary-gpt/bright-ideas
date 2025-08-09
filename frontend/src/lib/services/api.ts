@@ -14,6 +14,9 @@ import type {
   Plan,
   PlanCreate,
   PlanUpdate,
+  Todo,
+  TodoCreate,
+  TodoUpdate,
   ApiError
 } from '$lib/types';
 
@@ -285,6 +288,53 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({ idea_id: ideaId, answers }),
     });
+  }
+
+  // ====================================
+  // TODO API METHODS
+  // ====================================
+
+  async getTodos(completed?: boolean): Promise<Todo[]> {
+    const params = new URLSearchParams();
+    if (completed !== undefined) {
+      params.set('completed', completed.toString());
+    }
+    const query = params.toString();
+    return this.request<Todo[]>(`/todos/${query ? `?${query}` : ''}`);
+  }
+
+  async createTodo(todo: TodoCreate): Promise<Todo> {
+    return this.request<Todo>('/todos/', {
+      method: 'POST',
+      body: JSON.stringify(todo),
+    });
+  }
+
+  async getTodo(todoId: string): Promise<Todo> {
+    return this.request<Todo>(`/todos/${todoId}`);
+  }
+
+  async updateTodo(todoId: string, update: TodoUpdate): Promise<Todo> {
+    return this.request<Todo>(`/todos/${todoId}`, {
+      method: 'PUT',
+      body: JSON.stringify(update),
+    });
+  }
+
+  async completeTodo(todoId: string): Promise<Todo> {
+    return this.request<Todo>(`/todos/${todoId}/complete`, {
+      method: 'POST',
+    });
+  }
+
+  async deleteTodo(todoId: string): Promise<void> {
+    await this.request(`/todos/${todoId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getTodoStats(): Promise<{ total: number; completed: number; pending: number }> {
+    return this.request<{ total: number; completed: number; pending: number }>('/todos/stats/count');
   }
 
   // ====================================

@@ -32,11 +32,23 @@ async def create_refinement_session(
     if not idea:
         raise HTTPException(status_code=404, detail="Idea not found")
     
-    # Generate questions using AI
+    # Get previous context for continuation
+    previous_sessions = db.query(RefinementSession).filter(
+        RefinementSession.idea_id == session_data.idea_id,
+        RefinementSession.is_complete == True
+    ).order_by(RefinementSession.created_at.desc()).all()
+    
+    previous_plans = []
+    if idea.active_plan:
+        previous_plans = [idea.active_plan]
+    
+    # Generate questions using AI with context
     try:
         questions = await ai_service.generate_refinement_questions(
             title=idea.title,
-            description=idea.original_description
+            description=idea.original_description,
+            previous_sessions=previous_sessions,
+            previous_plans=previous_plans
         )
         
         # Convert to JSON format for storage

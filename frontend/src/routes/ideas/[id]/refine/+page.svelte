@@ -20,6 +20,7 @@
   let idea: IdeaDetail | null = null;
   let session: RefinementSession | null = null;
   let answers: Record<string, string> = {};
+  let previousSessions: RefinementSession[] = [];
   let loading = true;
   let submitting = false;
   let generating = false;
@@ -35,9 +36,13 @@
         // Load the idea first
         idea = await ideaActions.loadIdea(ideaId);
         
-        // Check if there's an existing incomplete session
+        // Load all sessions for this idea
         const sessions = await refinementActions.loadIdeaSessions(ideaId);
         const incompleteSession = sessions.find(s => !s.is_complete);
+        const completedSessions = sessions.filter(s => s.is_complete);
+        
+        // Store previous sessions for context display
+        previousSessions = completedSessions;
         
         if (incompleteSession) {
           // Use existing incomplete session
@@ -204,6 +209,74 @@
           Answer all questions to generate an implementation plan
         </div>
       </div>
+
+      <!-- Previous Context (if this is a continuation) -->
+      {#if previousSessions.length > 0 || (idea && idea.active_plan)}
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+          <h3 class="text-lg font-semibold text-blue-900 mb-4">
+            🏗️ Building on Your Previous Work
+          </h3>
+          <p class="text-blue-800 mb-4">
+            This refinement session will build on what you've already explored. Here's what we're working with:
+          </p>
+          
+          {#if idea && idea.active_plan}
+            <div class="mb-4">
+              <h4 class="font-medium text-blue-900 mb-2">Current Implementation Plan:</h4>
+              <div class="bg-white rounded border border-blue-200 p-3">
+                <p class="text-sm text-blue-800">{idea.active_plan.summary}</p>
+                {#if idea.active_plan.steps && idea.active_plan.steps.length > 0}
+                  <div class="mt-2">
+                    <p class="text-xs font-medium text-blue-700 mb-1">Key Steps:</p>
+                    <ul class="text-xs text-blue-600 space-y-1">
+                      {#each idea.active_plan.steps.slice(0, 3) as step}
+                        <li>• {step.title}</li>
+                      {/each}
+                      {#if idea.active_plan.steps.length > 3}
+                        <li class="text-blue-500">• ... and {idea.active_plan.steps.length - 3} more steps</li>
+                      {/if}
+                    </ul>
+                  </div>
+                {/if}
+              </div>
+            </div>
+          {/if}
+          
+          {#if previousSessions.length > 0}
+            <div class="mb-4">
+              <h4 class="font-medium text-blue-900 mb-2">Previous Refinement Sessions:</h4>
+              <div class="space-y-2">
+                {#each previousSessions.slice(0, 2) as prevSession, index}
+                  <details class="bg-white rounded border border-blue-200">
+                    <summary class="p-3 cursor-pointer text-sm font-medium text-blue-800 hover:bg-blue-50">
+                      Session {previousSessions.length - index} - {new Date(prevSession.created_at).toLocaleDateString()}
+                    </summary>
+                    <div class="px-3 pb-3">
+                      {#if prevSession.questions && prevSession.answers}
+                        <div class="space-y-2">
+                          {#each prevSession.questions.slice(0, 2) as question}
+                            <div class="text-xs">
+                              <p class="font-medium text-blue-700">Q: {question.question}</p>
+                              <p class="text-blue-600 mt-1">A: {prevSession.answers[question.id] || 'No answer'}</p>
+                            </div>
+                          {/each}
+                          {#if prevSession.questions.length > 2}
+                            <p class="text-xs text-blue-500">... and {prevSession.questions.length - 2} more questions</p>
+                          {/if}
+                        </div>
+                      {/if}
+                    </div>
+                  </details>
+                {/each}
+              </div>
+            </div>
+          {/if}
+          
+          <div class="text-sm text-blue-700 bg-blue-100 rounded-md p-3">
+            💡 The questions below are designed to build on this foundation and explore new dimensions or address gaps in your current approach.
+          </div>
+        </div>
+      {/if}
 
       <!-- Questions Form -->
       <div class="space-y-6">

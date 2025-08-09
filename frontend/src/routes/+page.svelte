@@ -8,6 +8,7 @@
   import { toastActions } from '$lib/stores';
   import Button from '$lib/components/shared/Button.svelte';
   import LoadingSpinner from '$lib/components/shared/LoadingSpinner.svelte';
+  import TodoList from '$lib/components/todos/TodoList.svelte';
   import type { Idea } from '$lib/types';
 
   let recentIdeas: Idea[] = [];
@@ -79,8 +80,10 @@
       <LoadingSpinner size="lg" message="Loading dashboard..." />
     </div>
   {:else}
-    <!-- Quick Actions -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Main content -->
+      <div class="lg:col-span-2 space-y-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div class="bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg p-6 text-white">
         <div class="flex items-center justify-between">
           <div>
@@ -118,8 +121,8 @@
       </div>
     </div>
 
-    <!-- Stats -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <!-- Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div class="bg-white rounded-lg border border-secondary-200 p-4">
         <div class="flex items-center">
           <div class="p-2 bg-blue-100 rounded-lg">
@@ -169,8 +172,8 @@
       </div>
     </div>
 
-    <!-- Recent Ideas -->
-    <div class="bg-white rounded-lg border border-secondary-200">
+        <!-- Recent Ideas -->
+        <div class="bg-white rounded-lg border border-secondary-200">
       <div class="p-6 border-b border-secondary-200">
         <div class="flex items-center justify-between">
           <h2 class="text-lg font-semibold text-secondary-900">Recent Ideas</h2>
@@ -236,6 +239,13 @@
           {/each}
         </div>
       {/if}
+      </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="lg:col-span-1">
+        <TodoList />
+      </div>
     </div>
   {/if}
 </div>

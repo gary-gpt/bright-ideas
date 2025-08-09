@@ -6,12 +6,34 @@ from typing import List, Dict, Any, Optional
 from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 
+# Todo Schemas
+class TodoCreate(BaseModel):
+    """Schema for creating a new todo"""
+    text: str = Field(..., min_length=1, max_length=500)
+
+class TodoUpdate(BaseModel):
+    """Schema for updating a todo"""
+    text: Optional[str] = Field(None, min_length=1, max_length=500)
+    is_completed: Optional[bool] = None
+
+class TodoResponse(BaseModel):
+    """Schema for todo responses"""
+    id: UUID
+    text: str
+    is_completed: bool
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
 # Idea Schemas
 class IdeaCreate(BaseModel):
     """Schema for creating a new idea"""
     title: str = Field(..., min_length=1, max_length=200)
     original_description: str = Field(..., min_length=10)
     tags: List[str] = Field(default_factory=list)
+    is_unrefined: bool = Field(default=False)
     
     @field_validator('tags', mode='before')
     @classmethod
@@ -37,6 +59,7 @@ class IdeaUpdate(BaseModel):
     original_description: Optional[str] = None
     tags: Optional[List[str]] = None
     status: Optional[str] = Field(None, pattern="^(captured|refining|planned|archived)$")
+    is_unrefined: Optional[bool] = None
 
 class IdeaResponse(BaseModel):
     """Schema for idea responses"""
@@ -45,6 +68,7 @@ class IdeaResponse(BaseModel):
     original_description: str
     tags: List[str]
     status: str
+    is_unrefined: bool
     created_at: datetime
     updated_at: datetime
     

@@ -25,11 +25,70 @@ class AIService:
         )
         self.model = settings.openai_model
 
-    async def generate_refinement_questions(self, title: str, description: str) -> List[RefinementQuestion]:
+    async def generate_refinement_questions(
+        self, 
+        title: str, 
+        description: str, 
+        previous_sessions: List[Any] = None,
+        previous_plans: List[Any] = None
+    ) -> List[RefinementQuestion]:
         """
-        Generate clarifying questions for an idea using LLM
+        Generate clarifying questions for an idea using LLM, building on previous context
         """
-        prompt = f"""You are an expert consultant helping someone refine their business idea. 
+        # Build context from previous sessions and plans
+        context_text = ""
+        if previous_sessions:
+            context_text += "\nPREVIOUS REFINEMENT SESSIONS:\n"
+            for i, session in enumerate(previous_sessions[:2]):  # Only include last 2 sessions
+                context_text += f"Session {i+1}:\n"
+                if hasattr(session, 'questions') and hasattr(session, 'answers'):
+                    for question in session.questions:
+                        question_id = question.get('id', f'q{i}')
+                        question_text = question.get('question', 'Unknown question')
+                        answer = session.answers.get(question_id, 'No answer')
+                        context_text += f"  Q: {question_text}\n  A: {answer}\n"
+                context_text += "\n"
+        
+        if previous_plans:
+            context_text += "CURRENT PLAN:\n"
+            plan = previous_plans[0]  # Most recent plan
+            if hasattr(plan, 'summary'):
+                context_text += f"Summary: {plan.summary}\n"
+            if hasattr(plan, 'steps'):
+                context_text += "Key Steps:\n"
+                for step in plan.steps[:3]:  # First 3 steps
+                    if isinstance(step, dict):
+                        context_text += f"  - {step.get('title', 'Step')}: {step.get('description', '')}\n"
+                    else:
+                        context_text += f"  - {getattr(step, 'title', 'Step')}: {getattr(step, 'description', '')}\n"
+            context_text += "\n"
+
+        base_prompt = f"""You are an expert consultant helping someone continue refining their business idea. 
+
+CURRENT IDEA:
+Title: "{title}"
+Description: "{description}"
+
+{context_text}
+
+Since this person is continuing their refinement process, generate 3-7 specific, thoughtful questions that BUILD ON what they've already explored. Focus on:
+- Addressing gaps or unclear areas from previous discussions
+- Diving deeper into aspects that need more detail
+- Exploring new angles that emerged from their current plan
+- Refining implementation details or go-to-market strategy
+
+AVOID repeating questions already answered. Instead, ask follow-up questions or explore new dimensions.
+
+Return ONLY a JSON array of questions in this exact format:
+[
+  {{"id": "q1", "question": "Based on your current approach, how will you handle [specific challenge from their plan]?"}},
+  {{"id": "q2", "question": "Your plan mentions [specific element] - what's your strategy for [deeper aspect]?"}},
+  {{"id": "q3", "question": "Given what you've learned, how might you [specific improvement or alternative]?"}}
+]
+
+Make each question specific to this idea and build on their existing work."""
+
+        prompt = base_prompt if context_text.strip() else f"""You are an expert consultant helping someone refine their business idea. 
 
 Given this idea:
 Title: "{title}"

@@ -11,7 +11,7 @@ from config import settings
 from database import create_tables
 
 # Import API routers
-from api import ideas, refinement, plans
+from api import ideas, refinement, plans, todos
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -174,6 +174,7 @@ async def root():
 app.include_router(ideas.router, prefix=settings.api_prefix)
 app.include_router(refinement.router, prefix=settings.api_prefix)
 app.include_router(plans.router, prefix=settings.api_prefix)
+app.include_router(todos.router, prefix=settings.api_prefix)
 
 
 if __name__ == "__main__":
