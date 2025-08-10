@@ -50,6 +50,20 @@
         <p class="text-sm font-medium break-words">
           {toast.message}
         </p>
+        {#if toast.actionLabel && toast.actionCallback}
+          <button
+            type="button"
+            class="mt-2 text-sm font-medium underline hover:no-underline"
+            on:click={() => {
+              if (toast.actionCallback) {
+                toast.actionCallback();
+                handleRemove();
+              }
+            }}
+          >
+            {toast.actionLabel}
+          </button>
+        {/if}
       </div>
       <div class="ml-4 flex-shrink-0 flex">
         <button

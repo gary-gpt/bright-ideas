@@ -21,6 +21,7 @@ class TodoResponse(BaseModel):
     id: UUID
     text: str
     is_completed: bool
+    completed_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
     

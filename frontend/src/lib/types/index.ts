@@ -11,6 +11,7 @@ export interface Todo {
   id: string;
   text: string;
   is_completed: boolean;
+  completed_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -29,11 +30,11 @@ export interface Idea {
   title: string;
   original_description: string;
   tags: string[];
-  status: 'captured' | 'refining' | 'planned' | 'archived';
+  status: "captured" | "refining" | "planned" | "archived";
   is_unrefined?: boolean; // Optional for backward compatibility
   created_at: string;
   updated_at: string;
-  
+
   // Computed fields from backend
   refinement_sessions_count: number;
   plans_count: number;
@@ -56,7 +57,7 @@ export interface IdeaUpdate {
   title?: string;
   original_description?: string;
   tags?: string[];
-  status?: 'captured' | 'refining' | 'planned' | 'archived';
+  status?: "captured" | "refining" | "planned" | "archived";
   is_unrefined?: boolean;
 }
 
@@ -112,7 +113,7 @@ export interface Plan {
   summary: string;
   steps: PlanStep[];
   resources: PlanResource[];
-  status: 'draft' | 'generated' | 'edited' | 'published';
+  status: "draft" | "generated" | "edited" | "published";
   is_active: boolean;
   content_markdown?: string;
   created_at: string;
@@ -130,7 +131,7 @@ export interface PlanUpdate {
   summary?: string;
   steps?: PlanStep[];
   resources?: PlanResource[];
-  status?: 'draft' | 'generated' | 'edited' | 'published';
+  status?: "draft" | "generated" | "edited" | "published";
 }
 
 // ====================================
@@ -179,9 +180,11 @@ export interface IdeaSummary {
 
 export interface Toast {
   id: string;
-  type: 'success' | 'error' | 'warning' | 'info';
+  type: "success" | "error" | "warning" | "info";
   message: string;
   duration?: number;
+  actionLabel?: string;
+  actionCallback?: () => void;
 }
 
 export interface LoadingState {
@@ -193,7 +196,7 @@ export interface Modal {
   id: string;
   isOpen: boolean;
   title?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: "sm" | "md" | "lg" | "xl";
 }
 
 // ====================================
@@ -214,8 +217,8 @@ export interface SearchFilters {
   search?: string;
   tags?: string[];
   status?: string;
-  sortBy?: 'created_at' | 'updated_at' | 'title';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "created_at" | "updated_at" | "title";
+  sortOrder?: "asc" | "desc";
   includeArchived?: boolean;
 }
 
@@ -249,7 +252,7 @@ export interface RefinementFormProps {
 export interface PlanViewerProps {
   plan: Plan;
   showExportButtons?: boolean;
-  onExport?: (format: 'json' | 'markdown') => void;
+  onExport?: (format: "json" | "markdown") => void;
 }
 
 export interface ProgressIndicatorProps {
@@ -264,7 +267,7 @@ export interface ProgressIndicatorProps {
 
 // These types are no longer used with the new architecture:
 // - ChatMessage (replaced with structured Q&A)
-// - Conversation (replaced with RefinementSession)  
+// - Conversation (replaced with RefinementSession)
 // - ConversationCreate (replaced with RefinementSessionCreate)
 // - MessageCreate (no longer needed)
 // - ChatRequest/ChatResponse (replaced with structured submission)

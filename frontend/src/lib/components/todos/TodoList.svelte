@@ -28,10 +28,23 @@
     }
   }
 
-  async function handleCompleteTodo(todoId: string) {
+  async function handleCompleteTodo(todoId: string, todoText: string) {
     try {
-      await todoActions.complete(todoId);
-      toastActions.success('Todo completed and removed');
+      const completedTodo = await todoActions.complete(todoId);
+      
+      // Show undo toast
+      toastActions.successWithUndo(
+        `Completed: "${todoText.length > 30 ? todoText.slice(0, 30) + '...' : todoText}"`,
+        async () => {
+          try {
+            await todoActions.undoComplete(todoId);
+            toastActions.success('Todo restored');
+          } catch (error) {
+            toastActions.error('Failed to undo completion');
+          }
+        },
+        30000 // 30 seconds to undo
+      );
     } catch (error) {
       toastActions.error('Failed to complete todo');
     }
@@ -110,7 +123,7 @@
   {/if}
 
   <!-- Todo list -->
-  {#if $todos.length === 0 && !$todosLoading}
+  {#if $todos.filter(t => !t.is_completed).length === 0 && !$todosLoading}
     <div class="text-center py-8">
       <p class="text-gray-500 dark:text-gray-400">No tasks yet</p>
       <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">
@@ -119,19 +132,20 @@
     </div>
   {:else}
     <div class="space-y-2">
-      {#each $todos as todo (todo.id)}
+      {#each $todos.filter(t => !t.is_completed) as todo (todo.id)}
         <div class="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700 
                     rounded-md group hover:bg-gray-100 dark:hover:bg-gray-600 
                     transition-colors">
           <!-- Checkbox to complete -->
           <button
-            on:click={() => handleCompleteTodo(todo.id)}
+            on:click={() => handleCompleteTodo(todo.id, todo.text)}
             class="flex-shrink-0 w-5 h-5 border-2 border-gray-300 dark:border-gray-500 
                    rounded hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20
-                   transition-colors flex items-center justify-center group-hover:border-green-400"
-            title="Complete task (this will remove it)"
+                   transition-colors flex items-center justify-center group-hover:border-green-400 {todo.is_completed ? 'bg-green-500 border-green-500' : ''}"
+            title="{todo.is_completed ? 'Already completed' : 'Complete task'}"
+            disabled={todo.is_completed}
           >
-            <Check size={12} class="text-green-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Check size={12} class="text-white {todo.is_completed ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity" />
           </button>
 
           <!-- Todo text -->

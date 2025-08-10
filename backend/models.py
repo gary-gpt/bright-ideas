@@ -104,6 +104,7 @@ class Todo(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     text = Column(Text, nullable=False)
     is_completed = Column(Boolean, default=False)
+    completed_at = Column(DateTime, nullable=True)  # Track when it was completed for undo
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
