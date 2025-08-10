@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "start": "node build"  
+    "start": "node build"
   },
   "dependencies": {
     "@sveltejs/adapter-node": "^1.3.1",

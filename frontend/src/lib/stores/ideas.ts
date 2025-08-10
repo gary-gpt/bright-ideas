@@ -1,17 +1,17 @@
 /**
  * Svelte stores for idea management - New Architecture
  */
-import { writable, derived, get } from 'svelte/store';
-import type { 
-  Idea, 
+import { writable, derived, get } from "svelte/store";
+import type {
+  Idea,
   IdeaDetail,
-  IdeaStats, 
+  IdeaStats,
   IdeaSummary,
   SearchFilters,
   RefinementSession,
-  Plan
-} from '$lib/types';
-import { api } from '$lib/services/api';
+  Plan,
+} from "$lib/types";
+import { api } from "$lib/services/api";
 
 // ====================================
 // CORE STORES
@@ -23,7 +23,9 @@ export const currentIdea = writable<IdeaDetail | null>(null);
 export const ideaStats = writable<IdeaStats | null>(null);
 
 // Refinement stores
-export const currentRefinementSession = writable<RefinementSession | null>(null);
+export const currentRefinementSession = writable<RefinementSession | null>(
+  null,
+);
 export const refinementSessions = writable<RefinementSession[]>([]);
 
 // Plan stores
@@ -32,11 +34,11 @@ export const ideaPlans = writable<Plan[]>([]);
 
 // Search and filter store
 export const searchFilters = writable<SearchFilters>({
-  search: '',
+  search: "",
   tags: [],
-  status: '',
-  sortBy: 'updated_at',
-  sortOrder: 'desc'
+  status: "",
+  sortBy: "updated_at",
+  sortOrder: "desc",
 });
 
 // Loading states
@@ -57,41 +59,43 @@ export const filteredIdeas = derived(
     // Apply search filter
     if ($filters.search) {
       const searchTerm = $filters.search.toLowerCase().trim();
-      filtered = filtered.filter(idea => 
-        idea.title.toLowerCase().includes(searchTerm) ||
-        idea.original_description.toLowerCase().includes(searchTerm) ||
-        idea.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+      filtered = filtered.filter(
+        (idea) =>
+          idea.title.toLowerCase().includes(searchTerm) ||
+          idea.original_description.toLowerCase().includes(searchTerm) ||
+          idea.tags.some((tag) => tag.toLowerCase().includes(searchTerm)),
       );
     }
 
     // Apply status filter
     if ($filters.status) {
-      filtered = filtered.filter(idea => idea.status === $filters.status);
+      filtered = filtered.filter((idea) => idea.status === $filters.status);
     } else {
       // By default, exclude archived ideas unless explicitly showing them
       if (!$filters.includeArchived) {
-        filtered = filtered.filter(idea => idea.status !== 'archived');
+        filtered = filtered.filter((idea) => idea.status !== "archived");
       }
     }
 
     // Apply tags filter
     if ($filters.tags && $filters.tags.length > 0) {
-      filtered = filtered.filter(idea => 
-        $filters.tags?.every(tag => idea.tags.includes(tag)) ?? false
+      filtered = filtered.filter(
+        (idea) =>
+          $filters.tags?.every((tag) => idea.tags.includes(tag)) ?? false,
       );
     }
 
     // Apply sorting
     filtered.sort((a, b) => {
-      const field = $filters.sortBy || 'updated_at';
-      const order = $filters.sortOrder === 'asc' ? 1 : -1;
-      
-      if (field === 'title') {
+      const field = $filters.sortBy || "updated_at";
+      const order = $filters.sortOrder === "asc" ? 1 : -1;
+
+      if (field === "title") {
         return order * a.title.localeCompare(b.title);
       } else {
         // Safe type-checked date field access
-        const aValue = field === 'created_at' ? a.created_at : a.updated_at;
-        const bValue = field === 'created_at' ? b.created_at : b.updated_at;
+        const aValue = field === "created_at" ? a.created_at : a.updated_at;
+        const bValue = field === "created_at" ? b.created_at : b.updated_at;
         const aDate = new Date(aValue);
         const bDate = new Date(bValue);
         return order * (aDate.getTime() - bDate.getTime());
@@ -99,37 +103,31 @@ export const filteredIdeas = derived(
     });
 
     return filtered;
-  }
+  },
 );
 
-export const ideasByStatus = derived(
-  ideas,
-  ($ideas) => {
-    const byStatus: Record<string, Idea[]> = {
-      captured: [],
-      refining: [], // Updated from 'refined'
-      planned: [],  // Updated from 'building'
-      archived: []  // Updated from 'completed'
-    };
+export const ideasByStatus = derived(ideas, ($ideas) => {
+  const byStatus: Record<string, Idea[]> = {
+    captured: [],
+    refining: [], // Updated from 'refined'
+    planned: [], // Updated from 'building'
+    archived: [], // Updated from 'completed'
+  };
 
-    $ideas.forEach(idea => {
-      byStatus[idea.status].push(idea);
-    });
+  $ideas.forEach((idea) => {
+    byStatus[idea.status].push(idea);
+  });
 
-    return byStatus;
-  }
-);
+  return byStatus;
+});
 
-export const allTags = derived(
-  ideas,
-  ($ideas) => {
-    const tagSet = new Set<string>();
-    $ideas.forEach(idea => {
-      idea.tags.forEach(tag => tagSet.add(tag));
-    });
-    return Array.from(tagSet).sort();
-  }
-);
+export const allTags = derived(ideas, ($ideas) => {
+  const tagSet = new Set<string>();
+  $ideas.forEach((idea) => {
+    idea.tags.forEach((tag) => tagSet.add(tag));
+  });
+  return Array.from(tagSet).sort();
+});
 
 // New derived stores for progress tracking
 export const refinementProgress = derived(
@@ -144,12 +142,12 @@ export const refinementProgress = derived(
     const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
 
     return { current, total, percentage };
-  }
+  },
 );
 
 export const activePlan = derived(
   ideaPlans,
-  ($plans) => $plans.find(plan => plan.is_active) || null
+  ($plans) => $plans.find((plan) => plan.is_active) || null,
 );
 
 // ====================================
@@ -164,11 +162,11 @@ export const ideaActions = {
         search: filters?.search,
         tags: filters?.tags,
         status: filters?.status,
-        limit: 100
+        limit: 100,
       });
       ideas.set(loadedIdeas);
     } catch (error) {
-      console.error('Failed to load ideas:', error);
+      console.error("Failed to load ideas:", error);
       throw error;
     } finally {
       ideasLoading.set(false);
@@ -182,20 +180,24 @@ export const ideaActions = {
       currentIdea.set(idea);
       return idea;
     } catch (error) {
-      console.error('Failed to load idea:', error);
+      console.error("Failed to load idea:", error);
       throw error;
     } finally {
       ideaLoading.set(false);
     }
   },
 
-  async createIdea(ideaData: { title: string; original_description: string; tags: string[] }): Promise<Idea> {
+  async createIdea(ideaData: {
+    title: string;
+    original_description: string;
+    tags: string[];
+  }): Promise<Idea> {
     try {
       const newIdea = await api.createIdea(ideaData);
-      ideas.update(items => [newIdea, ...items]);
+      ideas.update((items) => [newIdea, ...items]);
       return newIdea;
     } catch (error) {
-      console.error('Failed to create idea:', error);
+      console.error("Failed to create idea:", error);
       throw error;
     }
   },
@@ -203,54 +205,56 @@ export const ideaActions = {
   async updateIdea(ideaId: string, updates: Partial<Idea>): Promise<Idea> {
     try {
       const updatedIdea = await api.updateIdea(ideaId, updates);
-      
+
       // Update in ideas list
-      ideas.update(items => 
-        items.map(item => item.id === ideaId ? updatedIdea : item)
+      ideas.update((items) =>
+        items.map((item) => (item.id === ideaId ? updatedIdea : item)),
       );
-      
+
       // Update current idea if it matches
-      currentIdea.update(current => 
-        current?.id === ideaId ? { ...current, ...updatedIdea } : current
+      currentIdea.update((current) =>
+        current?.id === ideaId ? { ...current, ...updatedIdea } : current,
       );
-      
+
       return updatedIdea;
     } catch (error) {
-      console.error('Failed to update idea:', error);
+      console.error("Failed to update idea:", error);
       throw error;
     }
   },
 
   async deleteIdea(ideaId: string): Promise<void> {
-    console.log('ideaActions.deleteIdea called with:', ideaId);
+    console.log("ideaActions.deleteIdea called with:", ideaId);
     try {
-      console.log('Making API call to delete idea...');
+      console.log("Making API call to delete idea...");
       await api.deleteIdea(ideaId);
-      console.log('API delete call successful, updating local state...');
-      
+      console.log("API delete call successful, updating local state...");
+
       // Remove from ideas list
-      ideas.update(items => {
-        const filteredItems = items.filter(item => item.id !== ideaId);
-        console.log(`Removed idea from local store. Before: ${items.length}, After: ${filteredItems.length}`);
+      ideas.update((items) => {
+        const filteredItems = items.filter((item) => item.id !== ideaId);
+        console.log(
+          `Removed idea from local store. Before: ${items.length}, After: ${filteredItems.length}`,
+        );
         return filteredItems;
       });
-      
+
       // Clear current idea if it matches
-      currentIdea.update(current => {
+      currentIdea.update((current) => {
         if (current?.id === ideaId) {
-          console.log('Clearing current idea as it was deleted');
+          console.log("Clearing current idea as it was deleted");
           return null;
         }
         return current;
       });
-      
-      console.log('Delete operation completed successfully');
+
+      console.log("Delete operation completed successfully");
     } catch (error) {
-      console.error('Failed to delete idea in store:', error);
-      console.error('API delete error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        name: error instanceof Error ? error.name : 'Unknown',
-        stack: error instanceof Error ? error.stack : undefined
+      console.error("Failed to delete idea in store:", error);
+      console.error("API delete error details:", {
+        message: error instanceof Error ? error.message : "Unknown error",
+        name: error instanceof Error ? error.name : "Unknown",
+        stack: error instanceof Error ? error.stack : undefined,
       });
       throw error;
     }
@@ -262,7 +266,7 @@ export const ideaActions = {
       ideaStats.set(stats);
       return stats;
     } catch (error) {
-      console.error('Failed to load idea stats:', error);
+      console.error("Failed to load idea stats:", error);
       throw error;
     }
   },
@@ -272,7 +276,7 @@ export const ideaActions = {
       const recent = await api.getRecentIdeas(limit);
       return recent;
     } catch (error) {
-      console.error('Failed to load recent ideas:', error);
+      console.error("Failed to load recent ideas:", error);
       throw error;
     }
   },
@@ -282,41 +286,44 @@ export const ideaActions = {
       const summary = await api.getIdeaSummary(ideaId);
       return summary;
     } catch (error) {
-      console.error('Failed to load idea summary:', error);
+      console.error("Failed to load idea summary:", error);
       throw error;
     }
   },
 
   // Filter actions
   updateSearch(search: string) {
-    searchFilters.update(filters => ({ ...filters, search }));
+    searchFilters.update((filters) => ({ ...filters, search }));
   },
 
   updateStatusFilter(status: string) {
-    searchFilters.update(filters => ({ ...filters, status }));
+    searchFilters.update((filters) => ({ ...filters, status }));
   },
 
   updateTagsFilter(tags: string[]) {
-    searchFilters.update(filters => ({ ...filters, tags }));
+    searchFilters.update((filters) => ({ ...filters, tags }));
   },
 
-  updateSorting(sortBy: 'created_at' | 'updated_at' | 'title', sortOrder: 'asc' | 'desc') {
-    searchFilters.update(filters => ({ ...filters, sortBy, sortOrder }));
+  updateSorting(
+    sortBy: "created_at" | "updated_at" | "title",
+    sortOrder: "asc" | "desc",
+  ) {
+    searchFilters.update((filters) => ({ ...filters, sortBy, sortOrder }));
   },
 
   updateFilters(updates: Partial<SearchFilters>) {
-    searchFilters.update(filters => ({ ...filters, ...updates }));
+    searchFilters.update((filters) => ({ ...filters, ...updates }));
   },
 
   clearFilters() {
     searchFilters.set({
-      search: '',
+      search: "",
       tags: [],
-      status: '',
-      sortBy: 'updated_at',
-      sortOrder: 'desc'
+      status: "",
+      sortBy: "updated_at",
+      sortOrder: "desc",
     });
-  }
+  },
 };
 
 // ====================================
@@ -331,7 +338,7 @@ export const refinementActions = {
       currentRefinementSession.set(session);
       return session;
     } catch (error) {
-      console.error('Failed to create refinement session:', error);
+      console.error("Failed to create refinement session:", error);
       throw error;
     } finally {
       refinementLoading.set(false);
@@ -345,7 +352,7 @@ export const refinementActions = {
       currentRefinementSession.set(session);
       return session;
     } catch (error) {
-      console.error('Failed to load refinement session:', error);
+      console.error("Failed to load refinement session:", error);
       throw error;
     } finally {
       refinementLoading.set(false);
@@ -358,16 +365,21 @@ export const refinementActions = {
       refinementSessions.set(sessions);
       return sessions;
     } catch (error) {
-      console.error('Failed to load idea refinement sessions:', error);
+      console.error("Failed to load idea refinement sessions:", error);
       throw error;
     }
   },
 
-  async submitAnswers(sessionId: string, answers: Record<string, string>): Promise<RefinementSession> {
+  async submitAnswers(
+    sessionId: string,
+    answers: Record<string, string>,
+  ): Promise<RefinementSession> {
     try {
-      const updatedSession = await api.submitRefinementAnswers(sessionId, { answers });
+      const updatedSession = await api.submitRefinementAnswers(sessionId, {
+        answers,
+      });
       currentRefinementSession.set(updatedSession);
-      
+
       // Update the idea if the session is complete
       if (updatedSession.is_complete) {
         const currentIdeaValue = get(currentIdea);
@@ -375,10 +387,10 @@ export const refinementActions = {
           await ideaActions.loadIdea(currentIdeaValue.id); // Refresh idea data
         }
       }
-      
+
       return updatedSession;
     } catch (error) {
-      console.error('Failed to submit refinement answers:', error);
+      console.error("Failed to submit refinement answers:", error);
       throw error;
     }
   },
@@ -389,10 +401,10 @@ export const refinementActions = {
       currentRefinementSession.set(completedSession);
       return completedSession;
     } catch (error) {
-      console.error('Failed to complete refinement session:', error);
+      console.error("Failed to complete refinement session:", error);
       throw error;
     }
-  }
+  },
 };
 
 // ====================================
@@ -405,17 +417,17 @@ export const planActions = {
     try {
       const plan = await api.generatePlan(refinementSessionId);
       currentPlan.set(plan);
-      
+
       // Refresh idea plans
       const currentIdeaValue = get(currentIdea);
       if (currentIdeaValue) {
         await planActions.loadIdeaPlans(currentIdeaValue.id);
         await ideaActions.loadIdea(currentIdeaValue.id); // Refresh idea data
       }
-      
+
       return plan;
     } catch (error) {
-      console.error('Failed to generate plan:', error);
+      console.error("Failed to generate plan:", error);
       throw error;
     } finally {
       planLoading.set(false);
@@ -429,7 +441,7 @@ export const planActions = {
       currentPlan.set(plan);
       return plan;
     } catch (error) {
-      console.error('Failed to load plan:', error);
+      console.error("Failed to load plan:", error);
       throw error;
     } finally {
       planLoading.set(false);
@@ -442,7 +454,7 @@ export const planActions = {
       ideaPlans.set(plans);
       return plans;
     } catch (error) {
-      console.error('Failed to load idea plans:', error);
+      console.error("Failed to load idea plans:", error);
       throw error;
     }
   },
@@ -450,18 +462,18 @@ export const planActions = {
   async updatePlan(planId: string, updates: Partial<Plan>): Promise<Plan> {
     try {
       const updatedPlan = await api.updatePlan(planId, updates);
-      currentPlan.update(current => 
-        current?.id === planId ? updatedPlan : current
+      currentPlan.update((current) =>
+        current?.id === planId ? updatedPlan : current,
       );
-      
+
       // Update in plans list
-      ideaPlans.update(plans => 
-        plans.map(plan => plan.id === planId ? updatedPlan : plan)
+      ideaPlans.update((plans) =>
+        plans.map((plan) => (plan.id === planId ? updatedPlan : plan)),
       );
-      
+
       return updatedPlan;
     } catch (error) {
-      console.error('Failed to update plan:', error);
+      console.error("Failed to update plan:", error);
       throw error;
     }
   },
@@ -469,21 +481,21 @@ export const planActions = {
   async activatePlan(planId: string): Promise<Plan> {
     try {
       const activatedPlan = await api.activatePlan(planId);
-      
+
       // Update current plan
       currentPlan.set(activatedPlan);
-      
+
       // Update plans list (deactivate others, activate this one)
-      ideaPlans.update(plans => 
-        plans.map(plan => ({
+      ideaPlans.update((plans) =>
+        plans.map((plan) => ({
           ...plan,
-          is_active: plan.id === planId
-        }))
+          is_active: plan.id === planId,
+        })),
       );
-      
+
       return activatedPlan;
     } catch (error) {
-      console.error('Failed to activate plan:', error);
+      console.error("Failed to activate plan:", error);
       throw error;
     }
   },
@@ -491,16 +503,16 @@ export const planActions = {
   async deletePlan(planId: string): Promise<void> {
     try {
       await api.deletePlan(planId);
-      
+
       // Remove from plans list
-      ideaPlans.update(plans => plans.filter(plan => plan.id !== planId));
-      
+      ideaPlans.update((plans) => plans.filter((plan) => plan.id !== planId));
+
       // Clear current plan if it matches
-      currentPlan.update(current => 
-        current?.id === planId ? null : current
+      currentPlan.update((current) =>
+        current?.id === planId ? null : current,
       );
     } catch (error) {
-      console.error('Failed to delete plan:', error);
+      console.error("Failed to delete plan:", error);
       throw error;
     }
   },
@@ -509,7 +521,7 @@ export const planActions = {
     try {
       await api.downloadPlanJson(planId, filename);
     } catch (error) {
-      console.error('Failed to export plan as JSON:', error);
+      console.error("Failed to export plan as JSON:", error);
       throw error;
     }
   },
@@ -518,8 +530,8 @@ export const planActions = {
     try {
       await api.downloadPlanMarkdown(planId, filename);
     } catch (error) {
-      console.error('Failed to export plan as Markdown:', error);
+      console.error("Failed to export plan as Markdown:", error);
       throw error;
     }
-  }
+  },
 };

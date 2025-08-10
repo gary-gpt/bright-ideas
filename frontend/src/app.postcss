@@ -6,9 +6,9 @@
 /* Custom global styles */
 @layer base {
   html {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: "Inter", system-ui, sans-serif;
   }
-  
+
   body {
     @apply antialiased;
   }
@@ -18,21 +18,21 @@
   /* Custom scrollbar styles */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: theme('colors.secondary.400') theme('colors.secondary.100');
+    scrollbar-color: theme("colors.secondary.400") theme("colors.secondary.100");
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-track {
     @apply bg-secondary-100;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-thumb {
     @apply bg-secondary-400 rounded-full;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     @apply bg-secondary-500;
   }
@@ -46,11 +46,11 @@
   .animate-fade-in {
     animation: fadeIn 0.3s ease-in-out;
   }
-  
+
   .animate-slide-up {
     animation: slideUp 0.3s ease-out;
   }
-  
+
   .animate-bounce-in {
     animation: bounceIn 0.5s ease-out;
   }
@@ -64,14 +64,14 @@
     -ms-user-select: none;
     user-select: none;
   }
-  
+
   /* Hide number input arrows */
   .no-arrows::-webkit-outer-spin-button,
   .no-arrows::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }
-  
+
   .no-arrows {
     -moz-appearance: textfield;
   }
